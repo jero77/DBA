@@ -66,6 +66,21 @@ public class DatabaseController {
 	
 	
 	/**
+	 * Executes a query, which may be an INSERT, UPDATE, or DELETE statement 
+	 * or an SQL statement that returns nothing, such as an SQL DDL statement
+	 * @param query The SQL statement to be executed
+	 * @return The number of rows affected by this query
+	 * @throws SQLException
+	 */
+	public int executeUpdate(String query) throws SQLException{
+		Statement stmt = conn.createStatement();
+		int affectedRows = stmt.executeUpdate(query);
+		return affectedRows;
+	}
+	
+	
+	
+	/**
 	 * This method returns a table model which can be displayed with
 	 * a JTable
 	 * @param res The result set from which the table model is generated
