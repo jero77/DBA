@@ -66,22 +66,22 @@ public class HRAdminGUI extends JFrame {
 	private JTextField tfEmail;
 	private JTextField tfQuota;
 	private JTextField tfPassword;
-	
-	
+	//Enum for the textfields
 	private enum TextFields {
 		ID, FIRSTNAME, LASTNAME, COMPANY, EMAIL, QUOTA, PASSWORD
 	}
 	
 	
 	
-	
 	//Variables for database access
 	DatabaseController dbc = null;
 	private static final String PATH_TO_DB = "C:/SQLite/db/dba/HRD.db";
+	
+	//TODO adjust output
 	private static final String TABLE_QUERY = 
 			"SELECT id, firstname, name, company, emailaddress, quotaleft,"
 			+ " password FROM hrguys JOIN added_hrguy";
-	private String personalQuery = null;
+	
 	private DefaultTableModel defaultModel = null;
 	private JTable table;
 	
@@ -89,7 +89,7 @@ public class HRAdminGUI extends JFrame {
 	
 	//Variables for the admin
 	private String adminID = null;
-	
+	private String personalQuery = null;
 
 	/**
 	 * Test Unit.
@@ -116,6 +116,7 @@ public class HRAdminGUI extends JFrame {
 	
 	/**
 	 * Create the frame and initialize database access.
+	 * @param adminID The id of the admin currently using this GUI
 	 */
 	public HRAdminGUI(String adminID) {
 		
@@ -149,7 +150,6 @@ public class HRAdminGUI extends JFrame {
 		
 		//	1st Tab
 		//TODO Add for every HR guy how many invitations he has sent out
-		//TODO Add for very HR guy how much quota he has left
 		
 		JPanel listPanel = new JPanel();
 		listPanel.setToolTipText("Display a list of all the HR guys added by you");
@@ -198,6 +198,7 @@ public class HRAdminGUI extends JFrame {
 		
 		//	2nd Tab
 		JPanel addPanel = new JPanel();
+		addPanel.setToolTipText("Add a new HR guy to the database");
 		tabbedPane.addTab("Add HR guy", null, addPanel, "Opens a form to add a new HR guy to the database");
 		
 		//	Form to add HR guy
@@ -374,6 +375,14 @@ public class HRAdminGUI extends JFrame {
 		
 		
 		
+		//	3rd Tab
+		//TODO implement functionality
+		JPanel quotaPanel = new JPanel();
+		quotaPanel.setToolTipText("Grant or deny requested quota");
+		tabbedPane.addTab("Quota", null, quotaPanel, null);
+		
+		
+		
 		//database options
 		try {
 			initDB(PATH_TO_DB, TABLE_QUERY);
@@ -381,6 +390,8 @@ public class HRAdminGUI extends JFrame {
 			//Set up table
 			table.setModel(defaultModel);
 			scrollPane.setViewportView(table);
+			
+			
 			
 		} catch (SQLException e) {
 			handleSQLException(e, true);
@@ -480,7 +491,7 @@ public class HRAdminGUI extends JFrame {
 			}
 		}
 		query += ");";
-		System.out.println(query);
+		
 		dbc.executeUpdate(query);
 
 		
