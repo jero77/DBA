@@ -415,7 +415,8 @@ public class HRAdminGUI extends JFrame {
 		System.err.println(e.getMessage());
 		
 		//show an error message
-		JOptionPane.showMessageDialog(this, "An error occured!\n"+e.getMessage());
+		if (showDialog)
+			JOptionPane.showMessageDialog(this, "An error occured!\n"+e.getMessage());
 	}
 
 
