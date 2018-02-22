@@ -23,15 +23,29 @@ import java.awt.Font;
 import javax.swing.AbstractAction;
 
 import java.awt.event.ActionEvent;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import javax.swing.Action;
 import javax.swing.JTable;
 
 import dbc.DatabaseController;
+import javax.swing.JScrollPane;
 
-public class GUIFrame extends JFrame {
 
+/**
+ * This class provides a GUI for the HR admins.
+ * It provides the following functionality:
+ * 		- add new HR guys to the database
+ * 		- yield an overview over the HR guys added by an HR admin
+ * 		- 
+ * @author Jero
+ *
+ */
+public class HRAdminGUI extends JFrame {
+
+	
+	//Class variables for the content of the frame 
 	private JPanel contentPane;
 	private JTextField textField;
 	private JTextField textField_1;
@@ -40,36 +54,48 @@ public class GUIFrame extends JFrame {
 	private JTextField textField_4;
 	private JTextField textField_5;
 	private final Action action = new SwingAction();
+	
+	
+	//Variables for database access
+	private static final String PATH_TO_DB = "C:/SQLite/db/mbdb/mbdbchr1.db";
+	private DefaultTableModel defaultModel = null;
 	private JTable table;
-	
-	
-	private static String pathToDB = "C:/SQLite/db/mbdb/mbdbchr1.db";
-	
-	private static DefaultTableModel initTableModel = null;
 	
 
 	/**
+	 * Test Unit.
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
 		
 		
 		//Init connection to the database
-		DatabaseController dbc = new DatabaseController(pathToDB);
-		String initQuery = "SELECT * FROM Genes LIMIT 10";
+		String initQuery = "SELECT * FROM Genes LIMIT 100";
+		DefaultTableModel initTableModel = null;
+		
 		try {
-			initTableModel = dbc.buildTableModel(dbc.execute(initQuery));
+			DatabaseController dbc = new DatabaseController(PATH_TO_DB);
+			initTableModel = dbc.executeAndBuildTable(initQuery);
+			
 		} catch (SQLException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		//Need a final DefaultTableModel for the Runnable-Construct
+		final DefaultTableModel finalModel = initTableModel;
 		
 		
+		
+		
+		//Set up admin gui
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					GUIFrame frame = new GUIFrame();
+					HRAdminGUI frame = new HRAdminGUI(finalModel);
 					frame.setVisible(true);
+					
+					
+					
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -77,10 +103,18 @@ public class GUIFrame extends JFrame {
 		});
 	}
 
+	
+	
 	/**
-	 * Create the frame.
+	 * Create the frame and initialize database access.
 	 */
-	public GUIFrame() {
+	public HRAdminGUI(DefaultTableModel initTableModel) {
+		
+		//database options
+		this.defaultModel = initTableModel;		//used for JTable
+		
+		
+		//Frame options
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 800, 600);
 		contentPane = new JPanel();
@@ -88,18 +122,24 @@ public class GUIFrame extends JFrame {
 		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout(0, 0));
 		
+		//	Tabs
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		contentPane.add(tabbedPane, BorderLayout.CENTER);
 		
+		//	1st Tab
 		JPanel panel = new JPanel();
+		panel.setToolTipText("Display a list of all the HR guys added by you");
 		tabbedPane.addTab("List HR guys", null, panel, null);
 		panel.setLayout(new BorderLayout(0, 0));
 		
-		table = new JTable(initTableModel);
+		//	scrollable Table
+		table = new JTable(this.defaultModel);
+		JScrollPane scrollPane = new JScrollPane(table);
+		panel.add(scrollPane, BorderLayout.CENTER);
 		
 		
-		panel.add(table);
 		
+		//	2nd Tab
 		JPanel panel_1 = new JPanel();
 		tabbedPane.addTab("Add HR guy", null, panel_1, "Opens a form to add a new HR guy to the database");
 		
@@ -215,6 +255,11 @@ public class GUIFrame extends JFrame {
 		);
 		panel_1.setLayout(gl_panel_1);
 	}
+	
+	
+	
+	
+	
 	private class SwingAction extends AbstractAction {
 		public SwingAction() {
 			putValue(NAME, "SwingAction");

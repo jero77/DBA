@@ -7,7 +7,7 @@ import javax.swing.table.DefaultTableModel;
 
 /**
  * This class provides a controller for a SQL-database, which can execute queries
- * and will return the ResultSet.
+ * and also provide table models for certain queries.
  * 
  * @author Jero Schaefer
  */
@@ -19,8 +19,9 @@ public class DatabaseController {
 	/**
 	 * Constructor for a new controller for a SQL-database.
 	 * @param path The path to the database.
+	 * @throws SQLException
 	 */
-	public DatabaseController(String path) {
+	public DatabaseController(String path) throws SQLException {
 		this.path = path;
 		conn = null;
 		init();
@@ -29,21 +30,14 @@ public class DatabaseController {
 	
 	/**
 	 * Initializes the connection to the SQL-database specified by 
-	 * the String 'path'.
+	 * the class variable 'path'.
+	 * @throws SQLException
 	 */
-	public void init() {
+	public void init() throws SQLException{
 		//Set up the connection to the database
 		System.out.println("Try to connect to the database"+path+"...");
-		 
-		try {
-			String url = "jdbc:sqlite:"+path;
-			conn = DriverManager.getConnection(url);
-		} catch (SQLException ex) {
-			System.out.println(ex.getErrorCode());
-			System.out.println(ex.getSQLState());
-			System.out.println(ex.getMessage());
-			System.exit(0);
-		}
+		String url = "jdbc:sqlite:"+path;
+		conn = DriverManager.getConnection(url);
 		System.out.println("Connection established!");
 	}
 	
@@ -95,6 +89,19 @@ public class DatabaseController {
 	}
 	
 	
+	/**
+	 * Executes the given query and returns a table model according to the
+	 * results of this certain query.
+	 * @param query The query which is executed.
+	 * @return The table model according to the results of the query.
+	 * @throws SQLException
+	 */
+	public DefaultTableModel executeAndBuildTable(String query) throws SQLException{
+		ResultSet temp = this.execute(query);
+		return this.buildTableModel(temp);
+	}
+	
+	
 	
 	/**
 	 * Test Unit
@@ -104,13 +111,11 @@ public class DatabaseController {
 	 */
 	public static void main(String args[]) {
 		String path = "C:/SQLite/db/mbdb/mbdbchr1.db";
-		DatabaseController dbc = new DatabaseController(path);
-		
 		String query = "SELECT * FROM Genes LIMIT 10";
 		
 		
 		try {
-			
+			DatabaseController dbc = new DatabaseController(path);
 			ResultSet res = dbc.execute(query);
 			
 			//Careful: columns are from 1 to 'columns'
