@@ -35,11 +35,21 @@ public class DatabaseController {
 	 */
 	public void init() throws SQLException{
 		//Set up the connection to the database
-		System.out.println("Try to connect to the database"+path+"...");
 		String url = "jdbc:sqlite:"+path;
 		conn = DriverManager.getConnection(url);
-		System.out.println("Connection established!");
 	}
+	
+	
+	
+	/**
+	 * Closes the connection to the database. The DatabaseController object
+	 * should then be not used anymore.
+	 * @throws SQLException 
+	 */
+	public void close() throws SQLException {
+		conn.close();
+	}
+	
 	
 	
 	/**

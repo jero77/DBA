@@ -1,6 +1,7 @@
 package gui;
 
 import java.awt.BorderLayout;
+import java.awt.ComponentOrientation;
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
@@ -15,22 +16,30 @@ import java.awt.FlowLayout;
 
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
+import javax.swing.JOptionPane;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.JButton;
 
 import java.awt.Font;
 
-import javax.swing.AbstractAction;
 
 import java.awt.event.ActionEvent;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import javax.swing.Action;
 import javax.swing.JTable;
 
 import dbc.DatabaseController;
+
 import javax.swing.JScrollPane;
+
+
+import javax.swing.SwingConstants;
+
+import java.awt.event.ActionListener;
+
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 
 /**
@@ -53,11 +62,12 @@ public class HRAdminGUI extends JFrame {
 	private JTextField textField_3;
 	private JTextField textField_4;
 	private JTextField textField_5;
-	private final Action action = new SwingAction();
 	
 	
 	//Variables for database access
-	private static final String PATH_TO_DB = "C:/SQLite/db/mbdb/mbdbchr1.db";
+	DatabaseController dbc = null;
+	private static final String PATH_TO_DB = "C:/SQLite/db/dba/HRD.db";
+	private static final String TABLE_QUERY = "SELECT * FROM hrguys";
 	private DefaultTableModel defaultModel = null;
 	private JTable table;
 	
@@ -68,34 +78,13 @@ public class HRAdminGUI extends JFrame {
 	 */
 	public static void main(String[] args) {
 		
-		
-		//Init connection to the database
-		String initQuery = "SELECT * FROM Genes LIMIT 100";
-		DefaultTableModel initTableModel = null;
-		
-		try {
-			DatabaseController dbc = new DatabaseController(PATH_TO_DB);
-			initTableModel = dbc.executeAndBuildTable(initQuery);
-			
-		} catch (SQLException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		//Need a final DefaultTableModel for the Runnable-Construct
-		final DefaultTableModel finalModel = initTableModel;
-		
-		
-		
-		
 		//Set up admin gui
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					HRAdminGUI frame = new HRAdminGUI(finalModel);
+					HRAdminGUI frame = new HRAdminGUI();
 					frame.setVisible(true);
-					
-					
-					
+			
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -108,14 +97,19 @@ public class HRAdminGUI extends JFrame {
 	/**
 	 * Create the frame and initialize database access.
 	 */
-	public HRAdminGUI(DefaultTableModel initTableModel) {
+	public HRAdminGUI() {
 		
-		//database options
-		this.defaultModel = initTableModel;		//used for JTable
+		//Handle closing event
+		this.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent arg0) {
+				exit();
+			}
+		});
 		
 		
 		//Frame options
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);	//custom close operation
 		setBounds(100, 100, 800, 600);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -127,22 +121,59 @@ public class HRAdminGUI extends JFrame {
 		contentPane.add(tabbedPane, BorderLayout.CENTER);
 		
 		//	1st Tab
-		JPanel panel = new JPanel();
-		panel.setToolTipText("Display a list of all the HR guys added by you");
-		tabbedPane.addTab("List HR guys", null, panel, null);
-		panel.setLayout(new BorderLayout(0, 0));
+		JPanel listPanel = new JPanel();
+		listPanel.setToolTipText("Display a list of all the HR guys added by you");
+		tabbedPane.addTab("List HR guys", null, listPanel, null);
+		listPanel.setLayout(new BorderLayout(0, 0));
 		
 		//	scrollable Table
-		table = new JTable(this.defaultModel);
-		JScrollPane scrollPane = new JScrollPane(table);
-		panel.add(scrollPane, BorderLayout.CENTER);
+		table = new JTable();
+		JScrollPane scrollPane = new JScrollPane();
+		listPanel.add(scrollPane, BorderLayout.CENTER);
+		
+		
+		//	Button panel
+		JPanel buttonPanel = new JPanel();
+		JButton refreshButton = new JButton("Refresh");
+		refreshButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//Refresh the table
+				
+				try {
+					defaultModel = getModel(TABLE_QUERY);
+				} catch (SQLException e1) {
+					handleSQLException(e1, true);
+				} finally {
+					//Invokes JTable.tableChanged()
+					defaultModel.fireTableDataChanged();
+				}
+			}
+		});
+		refreshButton.setToolTipText("Refresh the table");
+		refreshButton.setHorizontalAlignment(SwingConstants.RIGHT);
+		listPanel.add(buttonPanel, BorderLayout.SOUTH);
+		buttonPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+		buttonPanel.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+		
+		//Exit Button
+		JButton btnExit = new JButton("Exit");
+		btnExit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				exit();
+			}
+		});
+		btnExit.setToolTipText("Exit the program");
+		btnExit.setHorizontalAlignment(SwingConstants.RIGHT);
+		buttonPanel.add(btnExit);
+		buttonPanel.add(refreshButton);
 		
 		
 		
 		//	2nd Tab
-		JPanel panel_1 = new JPanel();
-		tabbedPane.addTab("Add HR guy", null, panel_1, "Opens a form to add a new HR guy to the database");
+		JPanel addPanel = new JPanel();
+		tabbedPane.addTab("Add HR guy", null, addPanel, "Opens a form to add a new HR guy to the database");
 		
+		//	Form to add HR guy
 		JLabel lblName = new JLabel("First Name:");
 		
 		textField = new JTextField();
@@ -173,99 +204,211 @@ public class HRAdminGUI extends JFrame {
 		textField_5 = new JTextField();
 		textField_5.setColumns(10);
 		
-		JButton btnAdd = new JButton("Add HR guy");
-		btnAdd.setFont(new Font("Tahoma", Font.PLAIN, 15));
 		
+		//Add button
+		JButton btnAdd = new JButton("Add HR guy");
+		btnAdd.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				
+				//validate textfield inputs
+				
+				//get the entered information & add the guy
+				
+				
+				addHRGuy();
+			}
+
+		});
+		btnAdd.setFont(new Font("Tahoma", Font.PLAIN, 13));
+		
+		
+		//Exit button
 		JButton btnExi = new JButton("Exit");
-		btnExi.setAction(action);
-		btnExi.setFont(new Font("Tahoma", Font.PLAIN, 15));
-		GroupLayout gl_panel_1 = new GroupLayout(panel_1);
-		gl_panel_1.setHorizontalGroup(
-			gl_panel_1.createParallelGroup(Alignment.LEADING)
-				.addGroup(gl_panel_1.createSequentialGroup()
+		btnExi.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				exit();
+			}
+		});
+		btnExi.setFont(new Font("Tahoma", Font.PLAIN, 13));
+		
+		
+		
+		//	Organize layout of 2nd tab
+		GroupLayout gl_addPanel = new GroupLayout(addPanel);
+		gl_addPanel.setHorizontalGroup(
+			gl_addPanel.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_addPanel.createSequentialGroup()
 					.addContainerGap()
-					.addGroup(gl_panel_1.createParallelGroup(Alignment.LEADING)
-						.addGroup(gl_panel_1.createSequentialGroup()
-							.addGroup(gl_panel_1.createParallelGroup(Alignment.LEADING)
-								.addGroup(gl_panel_1.createSequentialGroup()
+					.addGroup(gl_addPanel.createParallelGroup(Alignment.TRAILING)
+						.addGroup(gl_addPanel.createSequentialGroup()
+							.addGroup(gl_addPanel.createParallelGroup(Alignment.LEADING)
+								.addGroup(gl_addPanel.createSequentialGroup()
 									.addComponent(lblEmailaddress)
 									.addPreferredGap(ComponentPlacement.RELATED)
 									.addComponent(textField_3, GroupLayout.DEFAULT_SIZE, 226, Short.MAX_VALUE))
-								.addGroup(gl_panel_1.createSequentialGroup()
+								.addGroup(gl_addPanel.createSequentialGroup()
 									.addComponent(lblCompany)
 									.addPreferredGap(ComponentPlacement.RELATED)
 									.addComponent(textField_2, GroupLayout.DEFAULT_SIZE, 255, Short.MAX_VALUE))
-								.addGroup(gl_panel_1.createSequentialGroup()
+								.addGroup(gl_addPanel.createSequentialGroup()
 									.addComponent(lblName)
 									.addPreferredGap(ComponentPlacement.RELATED)
 									.addComponent(textField, GroupLayout.PREFERRED_SIZE, 246, GroupLayout.PREFERRED_SIZE))
-								.addGroup(gl_panel_1.createSequentialGroup()
+								.addGroup(gl_addPanel.createSequentialGroup()
 									.addComponent(lblLastName)
 									.addPreferredGap(ComponentPlacement.RELATED)
 									.addComponent(textField_1, GroupLayout.DEFAULT_SIZE, 248, Short.MAX_VALUE)))
 							.addContainerGap(437, GroupLayout.PREFERRED_SIZE))
-						.addGroup(gl_panel_1.createSequentialGroup()
+						.addGroup(Alignment.LEADING, gl_addPanel.createSequentialGroup()
 							.addComponent(lblQuotaLeft)
 							.addPreferredGap(ComponentPlacement.RELATED)
 							.addComponent(textField_4, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 							.addContainerGap())
-						.addGroup(gl_panel_1.createSequentialGroup()
+						.addGroup(Alignment.LEADING, gl_addPanel.createSequentialGroup()
 							.addComponent(lblPassword)
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(textField_5, GroupLayout.PREFERRED_SIZE, 196, GroupLayout.PREFERRED_SIZE))
-						.addGroup(Alignment.TRAILING, gl_panel_1.createSequentialGroup()
-							.addComponent(btnAdd, GroupLayout.PREFERRED_SIZE, 131, GroupLayout.PREFERRED_SIZE)
-							.addPreferredGap(ComponentPlacement.UNRELATED)
-							.addComponent(btnExi, GroupLayout.PREFERRED_SIZE, 105, GroupLayout.PREFERRED_SIZE)
-							.addContainerGap())))
+							.addComponent(textField_5, GroupLayout.PREFERRED_SIZE, 196, GroupLayout.PREFERRED_SIZE)
+							.addContainerGap())
+						.addGroup(gl_addPanel.createSequentialGroup()
+							.addComponent(btnAdd, GroupLayout.PREFERRED_SIZE, 119, GroupLayout.PREFERRED_SIZE)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(btnExi, GroupLayout.PREFERRED_SIZE, 99, GroupLayout.PREFERRED_SIZE))))
 		);
-		gl_panel_1.setVerticalGroup(
-			gl_panel_1.createParallelGroup(Alignment.LEADING)
-				.addGroup(gl_panel_1.createSequentialGroup()
+		gl_addPanel.setVerticalGroup(
+			gl_addPanel.createParallelGroup(Alignment.TRAILING)
+				.addGroup(gl_addPanel.createSequentialGroup()
 					.addGap(12)
-					.addGroup(gl_panel_1.createParallelGroup(Alignment.BASELINE)
+					.addGroup(gl_addPanel.createParallelGroup(Alignment.BASELINE)
 						.addComponent(lblName)
 						.addComponent(textField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 					.addGap(18)
-					.addGroup(gl_panel_1.createParallelGroup(Alignment.BASELINE)
+					.addGroup(gl_addPanel.createParallelGroup(Alignment.BASELINE)
 						.addComponent(lblLastName)
 						.addComponent(textField_1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 					.addGap(18)
-					.addGroup(gl_panel_1.createParallelGroup(Alignment.BASELINE)
+					.addGroup(gl_addPanel.createParallelGroup(Alignment.BASELINE)
 						.addComponent(lblCompany)
 						.addComponent(textField_2, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 					.addGap(18)
-					.addGroup(gl_panel_1.createParallelGroup(Alignment.BASELINE)
+					.addGroup(gl_addPanel.createParallelGroup(Alignment.BASELINE)
 						.addComponent(lblEmailaddress)
 						.addComponent(textField_3, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 					.addGap(19)
-					.addGroup(gl_panel_1.createParallelGroup(Alignment.BASELINE)
+					.addGroup(gl_addPanel.createParallelGroup(Alignment.BASELINE)
 						.addComponent(lblQuotaLeft)
 						.addComponent(textField_4, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 					.addGap(18)
-					.addGroup(gl_panel_1.createParallelGroup(Alignment.BASELINE)
+					.addGroup(gl_addPanel.createParallelGroup(Alignment.BASELINE)
 						.addComponent(lblPassword)
 						.addComponent(textField_5, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 					.addContainerGap(278, Short.MAX_VALUE))
-				.addGroup(Alignment.TRAILING, gl_panel_1.createSequentialGroup()
-					.addContainerGap(478, Short.MAX_VALUE)
-					.addGroup(gl_panel_1.createParallelGroup(Alignment.BASELINE)
-						.addComponent(btnAdd, GroupLayout.PREFERRED_SIZE, 36, GroupLayout.PREFERRED_SIZE)
-						.addComponent(btnExi, GroupLayout.PREFERRED_SIZE, 37, GroupLayout.PREFERRED_SIZE)))
+				.addGroup(gl_addPanel.createSequentialGroup()
+					.addContainerGap(488, Short.MAX_VALUE)
+					.addGroup(gl_addPanel.createParallelGroup(Alignment.BASELINE)
+						.addComponent(btnExi)
+						.addComponent(btnAdd)))
 		);
-		panel_1.setLayout(gl_panel_1);
+		addPanel.setLayout(gl_addPanel);
+		
+		
+		
+		//database options
+		try {
+			initDB(PATH_TO_DB, TABLE_QUERY);
+		} catch (SQLException e) {
+			handleSQLException(e, true);
+		} finally {
+			//Set up table
+			table.setModel(defaultModel);
+			scrollPane.setViewportView(table);
+		}
+	
+		
+	}
+	
+	
+	/**
+	 * Handles any SQLException with some error output and
+	 * also a message dialog for the user
+	 * @param e THe exception to handle
+	 * @param showDialog Determines if a dialog is shown or not
+	 */
+	private void handleSQLException(SQLException e, boolean showDialog) {
+		System.err.println(e.getErrorCode());
+		System.err.println(e.getSQLState());
+		System.err.println(e.getMessage());
+		
+		//show an error message
+		JOptionPane.showMessageDialog(this, "An error occured!\n"+e.getMessage());
+	}
+
+
+
+	/**
+	 * Adds a HR guy with the given information to the database.
+	 * 
+	 */
+	private void addHRGuy() {
+		// TODO Auto-generated method stub
+		//TODO Test for refresh
+	}
+
+
+
+	/**
+	 * Initializes all the needed options and connections to the database.
+	 * @param path Path to the database
+	 * @param tableQuery Initial query used to obtain the table model
+	 * 
+	 */
+	private void initDB(String path, String tableQuery) throws SQLException {
+	
+		dbc = new DatabaseController(path);
+		//Model for JTable
+		this.defaultModel = this.getModel(tableQuery);
+		
+	}
+
+
+	/**
+	 * Get the model for the JTable via the DatabaseController dbc
+	 * @param tableQuery The query to be executed resulting in a DefaultTableModel
+	 * @return The model for the JTable
+	 * @throws SQLException 
+	 */
+	private DefaultTableModel getModel(String tableQuery) throws SQLException {
+		return dbc.executeAndBuildTable(tableQuery);
 	}
 	
 	
 	
-	
-	
-	private class SwingAction extends AbstractAction {
-		public SwingAction() {
-			putValue(NAME, "SwingAction");
-			putValue(SHORT_DESCRIPTION, "Some short description");
+	/**
+	 * Exits the Admin-GUI in a safe way after confirmed by the user via
+	 * a closing dialog
+	 */
+	private void exit() {
+
+		//Exit dialog
+		int confirm = JOptionPane.showOptionDialog(null,
+				"Are you sure to close the application?", "Exit Confirmation",
+				JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, 
+	             null, null, null);
+		
+		//Do not close yet
+		if (confirm == JOptionPane.NO_OPTION)
+			return;
+		
+		
+		//Close database connection
+		try {
+			dbc.close();
+		} catch (SQLException e) {
+			handleSQLException(e, false);
+			System.exit(-1);
 		}
-		public void actionPerformed(ActionEvent e) {
-		}
+		
+		//Exit frame
+		this.dispose();
 	}
+
 }
