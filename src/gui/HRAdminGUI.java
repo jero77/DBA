@@ -195,7 +195,6 @@ public class HRAdminGUI extends JFrame {
 		
 		//	2nd Tab
 		JPanel addPanel = new JPanel();
-		addPanel.setToolTipText("Add a new HR guy to the database");
 		tabbedPane.addTab("Add HR guy", null, addPanel, "Opens a form to add a new HR guy to the database");
 		
 		//	Form to add HR guy
