@@ -101,8 +101,8 @@ public class HRAdminGUI extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					//test id is "adm1"
-					HRAdminGUI frame = new HRAdminGUI("adm1");
+					//test id is "admBob"
+					HRAdminGUI frame = new HRAdminGUI("admBob");
 					frame.setVisible(true);
 			
 				} catch (Exception e) {
@@ -123,9 +123,6 @@ public class HRAdminGUI extends JFrame {
 		
 		//Admin options
 		this.adminID = adminID;
-		
-		
-		
 		
 		//Handle closing event
 		this.addWindowListener(new WindowAdapter() {

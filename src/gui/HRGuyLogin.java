@@ -148,7 +148,7 @@ public class HRGuyLogin extends JFrame {
 				} catch (SQLException e) {
 					handleSQLException(e, true);
 				} catch (AuthenticationException e) {
-					//handleAuthExc
+					handleAuthException(e);
 				}
 			}
 		});
@@ -169,10 +169,9 @@ public class HRGuyLogin extends JFrame {
 
 	
 	
-	
 
 	/**
-	 * Perform a login with the entered information.
+	 * Perform a login with the information the user entered into the textfields.
 	 * @throws SQLException
 	 * @throws IllegalArgumentException
 	 */
@@ -207,6 +206,20 @@ public class HRGuyLogin extends JFrame {
 	
 	
 	
+	
+	/**
+	 * Handles authentication errors of a user, which can occur at login.
+	 * @param e The exception that occured
+	 */
+	private void handleAuthException(AuthenticationException e) {
+		//display an error message
+		String title = "Authentication Error";
+		String message = "An error occured!\n"+e.getMessage();
+		JOptionPane.showMessageDialog(this, message, title, JOptionPane.ERROR_MESSAGE);
+	}
+	
+
+	
 	/**
 	 * Handles errors upon login due to illegal arguments (e.g. empty textfields)
 	 * by showing an error message to the user.
@@ -214,10 +227,10 @@ public class HRGuyLogin extends JFrame {
 	 */
 	private void handleLoginArgumentError(IllegalArgumentException e) {
 		//display an error message
-		JOptionPane.showMessageDialog(this, "An error occured!\n"+e.getMessage());
+		String title = "Argument Error";
+		String message = "An error occured!\n"+e.getMessage();
+		JOptionPane.showMessageDialog(this, message, title, JOptionPane.ERROR_MESSAGE);
 	}
-	
-	
 	
 
 	/**
@@ -226,16 +239,20 @@ public class HRGuyLogin extends JFrame {
 	 * @param showDialog Determines if a dialog is shown or not
 	 */
 	private void handleSQLException(SQLException e, boolean showDialog) {
+		//Console output
 		System.err.println(e.getErrorCode());
 		System.err.println(e.getSQLState());
 		System.err.println(e.getMessage());
 		
 		//show an error message
-		if (showDialog)
-			JOptionPane.showMessageDialog(this, "An error occured!\n"+e.getMessage());
+		if (showDialog) {
+			String title = "SQL Error";
+			String message = "An error occured!\n"+e.getMessage();	
+			JOptionPane.showMessageDialog(this, message, title, JOptionPane.ERROR_MESSAGE);
+		}
+		
 	}
 	
-
 	
 	/**
 	 * Exits the HRGuy-GUI in a safe way after confirmed by the user via
@@ -258,7 +275,7 @@ public class HRGuyLogin extends JFrame {
 		try {
 			dbc.close();
 		} catch (SQLException e) {
-			handleSQLException(e, false);
+			handleSQLException(e, false);		//dont show dialog
 			System.exit(-1);
 		}
 		
