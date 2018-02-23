@@ -9,6 +9,7 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 import dbc.DatabaseController;
+import exceptions.OutOfQuotaException;
 
 import javax.swing.JTabbedPane;
 import javax.swing.JSplitPane;
@@ -26,21 +27,33 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 public class HRGuyGUI extends JFrame {
 
+	//GUI variables
 	private JPanel contentPane;
-	
-	
-	//Database variables
-	private DatabaseController dbc = null;
-	private static final String PATH_TO_DB = "C:/SQLite/db/dba/HRD.db";
 	private JTextField tfFirstName;
 	private JTextField tfLastName;
 	private JTextField tfEmail;
 	private JTextField tfTeam;
-
+	private JLabel lblLeftValue;
+	private JLabel lblSentValue;
+	private JLabel lblReqValue;
+	
+	//Database variables
+	private DatabaseController dbc = null;
+	private static final String PATH_TO_DB = "C:/SQLite/db/dba/HRD.db";
+	
+	//Personal information
+	private String id, name, firstname, email;
+	private int quotaleft = 0;
+	private int invitationssent = 0;
+	private JTextField tfRequest;
+	
+	
 	/**
 	 * Test Unit.
 	 * Launch the application.
@@ -49,7 +62,8 @@ public class HRGuyGUI extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					HRGuyGUI frame = new HRGuyGUI(new DatabaseController(PATH_TO_DB));
+					//Test user has id test and password test (0 quota)
+					HRGuyGUI frame = new HRGuyGUI(new DatabaseController(PATH_TO_DB), "test");
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -62,20 +76,33 @@ public class HRGuyGUI extends JFrame {
 	
 
 	/**
-	 * Create the frame, gets a db-controller from the login.
+	 * Create the frame.
+	 * @param dbc DatabaseController for access to the database
+	 * @param guyID ID of the user of this interface (validated by login)
 	 */
-	public HRGuyGUI(DatabaseController dbc) {
+	public HRGuyGUI(DatabaseController dbc, String guyID) {
+
+		//Database
+		this.dbc = dbc;
+		
+		//Personal information
+		this.id = guyID;
+		try {
+			loadPersonalInformation(id);
+		} catch (SQLException e) {
+			handleSQLException(e, false);
+		}
+		
+		
+		
+		//Frame options
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent arg0) {
-				exit();
+				exit();		//custom close
 			}
 		});
 		setTitle("HRGuy Interface");
-		
-		this.dbc = dbc;
-		
-		
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		setBounds(100, 100, 800, 600);
 		contentPane = new JPanel();
@@ -86,6 +113,8 @@ public class HRGuyGUI extends JFrame {
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		contentPane.add(tabbedPane, BorderLayout.CENTER);
 		
+		
+		//Tab 1
 		JPanel invitationsTab = new JPanel();
 		invitationsTab.setToolTipText("");
 		tabbedPane.addTab("Invitations", null, invitationsTab, "Form to invite a survey candidate and overview about your invitations");
@@ -148,7 +177,7 @@ public class HRGuyGUI extends JFrame {
 		JButton btnInvite = new JButton("Invite");
 		btnInvite.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				//Get the textfields inputs
+				//Get the textfields inputs: name, firstname, email, team
 				String fields[] = new String[4];
 				fields[1] = tfFirstName.getText();
 				fields[0] = tfLastName.getText();
@@ -156,22 +185,25 @@ public class HRGuyGUI extends JFrame {
 				fields[3] = tfTeam.getText();
 				
 				//validate textfield inputs		
-				/*if (!validInputs(fields)) {
-					String error = "An error occured!\n";
-					error += "Check if all the textfields contain valid information\n";
-					error += "and try to add again.";
-					JOptionPane.showMessageDialog(null, error);
+				if (!validInputs(fields)) {
+					String error = "An error occured!\n"
+						+ "Check if all the textfields contain valid information\n"
+						+ "and try to invite again.";
+					JOptionPane.showMessageDialog(null, error, 
+							"Error", JOptionPane.ERROR_MESSAGE);
 				}
 				else {	
+					//sent an invitation
 					
 					try {
-						//addHRGuy(fields);
-						String success = "A new HR guy was added succesfully!";
-						JOptionPane.showMessageDialog(null, success);
+						sendInvitation(fields);
 					} catch (SQLException e) {
 						handleSQLException(e, true);
-					} 
-				}*/
+					} catch (OutOfQuotaException e) {
+						String error = "An error occured!\n" + e.getLocalizedMessage();
+						JOptionPane.showMessageDialog(null, error, "Error", JOptionPane.ERROR_MESSAGE);
+					}
+				}
 			}
 		});
 		btnInvite.setFont(new Font("Tahoma", Font.PLAIN, 15));
@@ -189,7 +221,7 @@ public class HRGuyGUI extends JFrame {
 			}
 		});
 		btnClear.setFont(new Font("Tahoma", Font.PLAIN, 15));
-		btnClear.setBounds(256, 226, 97, 25);
+		btnClear.setBounds(256, 225, 97, 25);
 		invitePanel.add(btnClear);
 		
 		JPanel rightPanel = new JPanel();
@@ -207,24 +239,29 @@ public class HRGuyGUI extends JFrame {
 		lblQuotaLeft.setBounds(12, 95, 120, 25);
 		rightPanel.add(lblQuotaLeft);
 		
-		JLabel lblSentValue = new JLabel("");
+		lblSentValue = new JLabel(""+this.invitationssent);
 		lblSentValue.setFont(new Font("Tahoma", Font.PLAIN, 15));
-		lblSentValue.setBounds(144, 13, 70, 25);
+		lblSentValue.setBounds(144, 51, 70, 25);
 		rightPanel.add(lblSentValue);
 		
-		JLabel lblLeftValue = new JLabel("");
+		lblLeftValue = new JLabel(""+this.quotaleft);
 		lblLeftValue.setFont(new Font("Tahoma", Font.PLAIN, 15));
-		lblLeftValue.setBounds(144, 51, 70, 25);
+		lblLeftValue.setBounds(144, 95, 70, 25);
 		rightPanel.add(lblLeftValue);
 		
-		JButton btnExit = new JButton("Exit");
-		btnExit.setFont(new Font("Tahoma", Font.PLAIN, 15));
-		btnExit.setBounds(268, 462, 97, 25);
-		rightPanel.add(btnExit);
-		
 		JButton btnRefresh = new JButton("Refresh");
+		btnRefresh.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				//get current amount of quota & update the label
+				try {
+					refresh();
+				} catch (SQLException e) {
+					handleSQLException(e, true);
+				}
+			}
+		});
 		btnRefresh.setFont(new Font("Tahoma", Font.PLAIN, 15));
-		btnRefresh.setBounds(159, 462, 97, 25);
+		btnRefresh.setBounds(144, 194, 97, 25);
 		rightPanel.add(btnRefresh);
 		
 		JLabel lblYourInvitations = new JLabel("Your Invitations & Quota:");
@@ -232,16 +269,206 @@ public class HRGuyGUI extends JFrame {
 		lblYourInvitations.setBounds(103, 13, 189, 25);
 		rightPanel.add(lblYourInvitations);
 		
-		JPanel quotaTab = new JPanel();
-		tabbedPane.addTab("Quota", null, quotaTab, "Manage your quota");
-		tabbedPane.setEnabledAt(1, true);
+		JLabel lblRequestQuota = new JLabel("Request Quota:");
+		lblRequestQuota.setFont(new Font("Tahoma", Font.PLAIN, 15));
+		lblRequestQuota.setBounds(121, 265, 120, 25);
+		rightPanel.add(lblRequestQuota);
 		
+		JLabel lblAdditionalQuota = new JLabel("Amount of Quota:");
+		lblAdditionalQuota.setFont(new Font("Tahoma", Font.PLAIN, 15));
+		lblAdditionalQuota.setBounds(12, 303, 120, 25);
+		rightPanel.add(lblAdditionalQuota);
+		
+		tfRequest = new JTextField();
+		tfRequest.setFont(new Font("Tahoma", Font.PLAIN, 15));
+		tfRequest.setColumns(10);
+		tfRequest.setBounds(144, 303, 97, 25);
+		rightPanel.add(tfRequest);
+		
+		JButton btnRequest = new JButton("Request");
+		btnRequest.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//Request quota
+				String text = tfRequest.getText();
+				int amount = 0;
+				String error = "Please enter a positive Integer in the Textfield!";
+				String success = "Quota-Request was submitted successfully.";
+				
+				try {
+					//amount must be parsable and also it must be bigger than 0
+					amount = Integer.parseInt(text);
+					if (amount <= 0) {
+						JOptionPane.showMessageDialog(null, error, "Error", JOptionPane.ERROR_MESSAGE);
+					} else {
+						//amount is valid and amount > 0
+						request(amount);
+						JOptionPane.showMessageDialog(null, success);
+					}
+				} catch (NumberFormatException ex) {			
+					JOptionPane.showMessageDialog(null, error, "Error", JOptionPane.ERROR_MESSAGE);
+				} catch (SQLException ex) {
+					handleSQLException(ex, true);
+				}
+				
+				
+			}
+		});
+		btnRequest.setFont(new Font("Tahoma", Font.PLAIN, 15));
+		btnRequest.setBounds(268, 303, 97, 25);
+		rightPanel.add(btnRequest);
+		
+		JLabel lblQuotaRequested = new JLabel("Quota requested:");
+		lblQuotaRequested.setFont(new Font("Tahoma", Font.PLAIN, 15));
+		lblQuotaRequested.setBounds(12, 133, 120, 25);
+		rightPanel.add(lblQuotaRequested);
+		
+		lblReqValue = new JLabel("0");
+		lblReqValue.setFont(new Font("Tahoma", Font.PLAIN, 15));
+		lblReqValue.setBounds(144, 133, 70, 25);
+		rightPanel.add(lblReqValue);
+		
+		//Tab 2 TODO
 		JPanel dataTab = new JPanel();
 		tabbedPane.addTab("Personal Data", null, dataTab, "Manage your personal data");
 		
+		
+		//Tab 3 TODO
 		JPanel teamTab = new JPanel();
 		tabbedPane.addTab("Team", null, teamTab, "Team statistics");
 	}
+	
+	
+	/**
+	 * Creates a quota request in the database. Also updates the
+	 * value on the GUI for the amount of quota requested in total.
+	 * @param amount The amount of quota requested
+	 * @throws SQLException 
+	 */
+	private void request(int amount) throws SQLException {
+		String query = "INSERT INTO quotaRequest VALUES ('"
+				+ this.id + "', " + amount + ");";
+		dbc.executeUpdate(query);
+		this.tfRequest.setText("");
+		
+		refresh();
+	}
+
+
+	/**
+	 * Loads the personal information of the user with the given id.
+	 * @param id ID of the user
+	 */
+	private void loadPersonalInformation(String id) throws SQLException{
+		//Query DB
+		String query = "SELECT * FROM hrguys WHERE id = ";
+		query += "'" + id + "';";
+		ResultSet res = dbc.execute(query);
+		res.next();
+		
+		//Store information locally: name, firstname, email, quotaleft
+		this.name = res.getString("name");
+		this.firstname = res.getString("firstname");
+		this.email = res.getString("emailaddress");
+		this.quotaleft = res.getInt("quotaleft");
+		
+	}
+
+
+
+
+	/**
+	 * Send out an invitation to the candidate. An invitation can only be sent
+	 * if the guy has quota left (>0)
+	 * @param fields
+	 * @throws SQLException 
+	 * @throws OutOfQuotaException 
+	 */
+	private void sendInvitation(String[] fields) 
+			throws SQLException, OutOfQuotaException  {
+		
+		//Check quota constraint
+		refresh();
+		if (this.quotaleft == 0) {	//can never be less than zero
+			String message = "You have not enough quota at the moment.\n";
+			message += "Request some more quota via the Quota-Tab";
+			throw new OutOfQuotaException(message);
+		}
+		
+		String from = this.email;
+		String to = fields[2];
+		String subject = "HRD Inc. - Survey Invitation";
+		
+		//body			first name		  last name
+		String body = "Hello " + fields[1] + " " + fields[0] + ",\n"
+				+ "I would like to invite you as potential new coworker.\n"
+				+ "Therefor, you need to complete a survey. The survey can "
+				+ "be accessed via this link: ";
+		//TODO link
+		
+		
+		//TODO display the invitation email approp.
+		
+		
+		JOptionPane.showMessageDialog(this, from+" -> "+to+":\n"+subject+
+				"\n"+body+"linklinklink");
+		
+
+		//Decrease this guy's quota by one
+		this.quotaleft--;
+		String query = "UPDATE hrguys SET quotaleft = "
+			+ this.quotaleft + " WHERE id = '" + this.id + "';";
+		dbc.executeUpdate(query);
+		
+		//Update label
+		this.lblLeftValue.setText(""+this.quotaleft);
+	}
+
+
+
+	/**
+	 * Check the current amount of quota left, invitations sent and 
+	 * quota requested by this user & update the GUI afterwards.
+	 * @throws SQLException 
+	 */
+	private void refresh() throws SQLException {
+		//TODO invitations
+		String query = "";
+		
+		//Quota left
+		query = "SELECT quotaleft FROM hrguys WHERE id ="
+			+ " '" + this.id + "';";
+		ResultSet res = dbc.execute(query);
+		res.next();
+		this.quotaleft = res.getInt("quotaleft");
+		this.lblLeftValue.setText(""+this.quotaleft);
+		
+		//Quota requested 
+		query = "SELECT sum(amount) FROM quotaRequest WHERE "
+				+ "hrguy = '" + this.id +"' GROUP BY hrguy;";
+		res = dbc.execute(query);
+		if (res.next())		//User has quota requested?
+			this.lblReqValue.setText(""+res.getInt("sum(amount)"));
+	}
+
+
+
+
+	/**
+	 * Validates the inputs of the text fields of the invite-form.
+	 * Right now it only checks whether one of the fields is empty.
+	 * @return Returns whether the inputs are valid or not
+	 */
+	private boolean validInputs(String[] fields) {
+		//fields should be: name, firstname, email, team
+		for (String str : fields) {
+			if (str.equals(""))
+				return false;
+		}
+		return true;
+	}
+	
+	
+	
 	
 	
 	/**
