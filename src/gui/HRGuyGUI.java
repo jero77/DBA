@@ -335,6 +335,13 @@ public class HRGuyGUI extends JFrame {
 		//Tab 3 TODO
 		JPanel teamTab = new JPanel();
 		tabbedPane.addTab("Team", null, teamTab, "Team statistics");
+		
+		//refresh gui	
+		try {
+			refresh();
+		} catch (SQLException e1) {
+			handleSQLException(e1, false);
+		}
 	}
 	
 	
@@ -345,8 +352,8 @@ public class HRGuyGUI extends JFrame {
 	 * @throws SQLException 
 	 */
 	private void request(int amount) throws SQLException {
-		String query = "INSERT INTO quotaRequest VALUES ('"
-				+ this.id + "', " + amount + ");";
+		String query = "INSERT INTO quotaRequest (hrguy, amount) "
+				+ "VALUES ('" + this.id + "', " + amount + ");";
 		dbc.executeUpdate(query);
 		this.tfRequest.setText("");
 		
