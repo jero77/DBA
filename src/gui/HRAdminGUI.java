@@ -1,5 +1,7 @@
 package gui;
 
+import gui.HRAdminGUI.Request;
+
 import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
 import java.awt.EventQueue;
@@ -14,6 +16,7 @@ import javax.swing.JLabel;
 
 import java.awt.FlowLayout;
 
+import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JOptionPane;
@@ -42,6 +45,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+import javax.swing.JList;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
+
 
 /**
  * This class provides a GUI for the HR admins.
@@ -53,10 +61,38 @@ import java.awt.event.WindowEvent;
  *
  */
 public class HRAdminGUI extends JFrame {
+	
+	
+	
+	/**
+	 * Nested class used as JList element
+	 * @author Jero
+	 */
+	class Request {
+		//Class Variables
+		String id;
+		String guyID;
+		String name;
+		int amount;
+		//Constructor
+		Request(String id, String guyID, String name, int amount) {
+			this.id = id;
+			this.guyID = guyID;
+			this.name = name;
+			this.amount = amount;
+		}
+		//Overrides
+		public String toString() {
+			String ret = "The HR guy " + name + " (id = " + guyID + ")"
+					+ " requests " + amount + " quota.";
+			return ret;
+		}
+	}
+	
 
-	
+
+	//Content pane
 	private JPanel contentPane;
-	
 	
 	//Class variables for the form
 	private JTextField tfID;
@@ -70,6 +106,10 @@ public class HRAdminGUI extends JFrame {
 	private enum TextFields {
 		ID, FIRSTNAME, LASTNAME, COMPANY, EMAIL, QUOTA, PASSWORD
 	}
+	
+	
+	//Class variables for quota request
+	private JList<Request> list;
 	
 	
 	
@@ -119,6 +159,7 @@ public class HRAdminGUI extends JFrame {
 	 * @param adminID The id of the admin currently using this GUI
 	 */
 	public HRAdminGUI(String adminID) {
+		setTitle("HRAdminGUI");
 		
 		
 		//Admin options
@@ -372,15 +413,77 @@ public class HRAdminGUI extends JFrame {
 		
 		
 		//	3rd Tab
-		//TODO implement functionality
 		JPanel quotaPanel = new JPanel();
 		quotaPanel.setToolTipText("Grant or deny requested quota");
 		tabbedPane.addTab("Quota", null, quotaPanel, null);
+		quotaPanel.setLayout(null);
 		
+		JLabel lblQuotaRequests = new JLabel("Quota Requests:");
+		lblQuotaRequests.setBounds(12, 13, 101, 16);
+		quotaPanel.add(lblQuotaRequests);
+		
+		JButton btnGrantQuota = new JButton("Grant Quota");
+		btnGrantQuota.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//Selected request
+				Request r = list.getSelectedValue();
+				
+				//remove the request from the database
+				String query = "DELETE FROM quotaRequest "
+						+ "WHERE id = " + r.id;
+				//grant this HR Guy the quota he requested
+				String query2 = "UPDATE hrguys SET quotaleft = quotaleft + "
+						+ r.amount + " WHERE id = '" + r.guyID + "';";
+				
+				try {
+					dbc.executeUpdate(query);
+					dbc.executeUpdate(query2);
+					
+					//Update the list according to the changed database content
+					list.setModel(getListModel());
+					
+				} catch (SQLException ex) {
+					handleSQLException(ex, true);
+				}
+			}
+		});
+		btnGrantQuota.setEnabled(false);
+		btnGrantQuota.setBounds(548, 475, 106, 25);
+		quotaPanel.add(btnGrantQuota);
+		
+		JButton btnDenyQuota = new JButton("Deny Quota");
+		btnDenyQuota.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//Selected request
+				Request r = list.getSelectedValue();
+				
+				//remove the request from the database
+				String query = "DELETE FROM quotaRequest "
+						+ "WHERE id = " + r.id;
+				try {
+					dbc.executeUpdate(query);
+					
+					//Update the list according to the changed database content
+					list.setModel(getListModel());
+					
+				} catch (SQLException ex) {
+					handleSQLException(ex, true);
+				}
+			}
+		});
+		btnDenyQuota.setEnabled(false);
+		btnDenyQuota.setBounds(666, 475, 101, 25);
+		quotaPanel.add(btnDenyQuota);
+		
+		JScrollPane scrollPane_1 = new JScrollPane();
+		scrollPane_1.setBounds(22, 42, 514, 458);
+		quotaPanel.add(scrollPane_1);
+
 		
 		
 		//database options
 		try {
+			//init connection
 			initDB(PATH_TO_DB, TABLE_QUERY);
 
 			//Set up table
@@ -392,10 +495,67 @@ public class HRAdminGUI extends JFrame {
 		} catch (SQLException e) {
 			handleSQLException(e, true);
 		} 
+		
+		
+		//Can only be after dbc initialization
+		list = new JList<Request>();
+		try {
+			list.setModel(getListModel());
+		} catch (SQLException e) {
+			handleSQLException(e, false);
+		}
+		list.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent arg0) {		
+				//Disable accept or deny request buttons (grant/deny)
+				if (arg0.getValueIsAdjusting() == false) {
+					if (list.getSelectedIndex() == -1) {
+						//Nothing selected, disable grant & deny button
+						btnGrantQuota.setEnabled(false);
+						btnDenyQuota.setEnabled(false);
+					} else {
+						//Enable grant & deny button
+						btnGrantQuota.setEnabled(true);
+						btnDenyQuota.setEnabled(true);
+					}	
+				}
+			}
+		});
+		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		scrollPane_1.setViewportView(list);
 	}
 	
 	
 	
+
+
+	/**
+	 * Obtain the current requests of all HR Guys this admin added to
+	 * the database & update the JList accordingly.
+	 * @return List model for the JList
+	 * @throws SQLException 
+	 * 
+	 */
+	private DefaultListModel<Request> getListModel() throws SQLException {
+		//Amount of quota requested by HR guys added by this admin
+		String query = "SELECT r.id as id, r.hrguy as guy, "
+				+ "g.firstname as firstname, g.name as name, r.amount as amount "
+				+ "FROM quotaRequest r, hrguys g, added_hrguy a "
+				+ "WHERE r.hrguy = g.id AND g.id = a.hrguy "
+				+ "AND a.admin = '" + this.adminID + "';";
+		ResultSet res = dbc.execute(query);
+		
+		//List model
+		DefaultListModel<Request> listModel = new DefaultListModel<Request>();
+		while (res.next()) {
+			String id = res.getString("id");
+			String guyID = res.getString("guy");
+			String name = res.getString("firstname")+" "+res.getString("name");
+			int amount = res.getInt("amount");
+			listModel.addElement(new Request(id, guyID, name, amount));
+		}
+		
+		return listModel;
+	}
 
 
 
@@ -406,9 +566,9 @@ public class HRAdminGUI extends JFrame {
 	 * @param showDialog Determines if a dialog is shown or not
 	 */
 	private void handleSQLException(SQLException e, boolean showDialog) {
-		System.err.println(e.getErrorCode());
-		System.err.println(e.getSQLState());
+		System.err.println(e.getErrorCode() + " " + e.getSQLState());
 		System.err.println(e.getMessage());
+		e.printStackTrace();
 		
 		//show an error message
 		if (showDialog)
@@ -513,7 +673,7 @@ public class HRAdminGUI extends JFrame {
 		
 		//Personalized query - filter hrguys (only the ones added by this admin)
 		this.personalQuery = tableQuery;
-		this.personalQuery += " ON hrguys.id = added_hrguy.guy";
+		this.personalQuery += " ON hrguys.id = added_hrguy.hrguy";
 		this.personalQuery += " WHERE added_hrguy.admin = '"+this.adminID+"'";
 		
 		//Model for JTable
