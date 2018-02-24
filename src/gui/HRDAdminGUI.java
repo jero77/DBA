@@ -1,6 +1,6 @@
 package gui;
 
-import gui.HRAdminGUI.Request;
+import gui.HRDAdminGUI.Request;
 
 import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
@@ -60,7 +60,7 @@ import javax.swing.event.ListSelectionEvent;
  * @author Jero
  *
  */
-public class HRAdminGUI extends JFrame {
+public class HRDAdminGUI extends JFrame {
 	
 	
 	
@@ -142,7 +142,7 @@ public class HRAdminGUI extends JFrame {
 			public void run() {
 				try {
 					//test id is "admBob"
-					HRAdminGUI frame = new HRAdminGUI("admBob");
+					HRDAdminGUI frame = new HRDAdminGUI("admBob");
 					frame.setVisible(true);
 			
 				} catch (Exception e) {
@@ -158,8 +158,8 @@ public class HRAdminGUI extends JFrame {
 	 * Create the frame and initialize database access.
 	 * @param adminID The id of the admin currently using this GUI
 	 */
-	public HRAdminGUI(String adminID) {
-		setTitle("HRAdminGUI");
+	public HRDAdminGUI(String adminID) {
+		setTitle("HRDAdminGUI");
 		
 		
 		//Admin options
