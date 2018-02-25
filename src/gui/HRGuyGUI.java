@@ -31,6 +31,20 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
+
+/**
+ * This class provides a graphical user interface for the HR guys.
+ * The following functionality is implemented:
+ * 		- Invite survey candidates (send out invitation with link)
+ * 		- Show amount of quota (requested and left)
+ * 		- Show amount of invitations sent
+ * 		- Request more Quota from admin
+ * 		- Manage personal information (change data)
+ * 		- List HR Guy's Teams
+ * 		- Link to Team statistics
+ * @author Jero
+ *
+ */
 public class HRGuyGUI extends JFrame {
 
 	//GUI variables

@@ -41,11 +41,11 @@ import dbc.PasswordHash;
 
 
 /**
- * This class provides a GUI for the HR admins.
+ * This class provides a GUI for the HRD admins.
  * It provides the following functionality:
  * 		- add new HR guys to the database
- * 		- yield an overview over the HR guys added by an HR admin
- * 		- 
+ * 		- show an overview over the HR guys added by this HRD admin (user)
+ * 		- grant or deny Quota (Requests submitted by the HR guys via their GUI)
  * @author Jero
  *
  */
