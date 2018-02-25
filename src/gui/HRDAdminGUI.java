@@ -1,10 +1,10 @@
 package gui;
 
-import gui.HRDAdminGUI.Request;
-
 import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
 import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.FlowLayout;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -13,42 +13,31 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JLabel;
-
-import java.awt.FlowLayout;
-
 import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JOptionPane;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.JButton;
-
-import java.awt.Font;
-
-
-import java.awt.event.ActionEvent;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-
 import javax.swing.JTable;
-
-import dbc.DatabaseController;
-import dbc.PasswordHash;
-
 import javax.swing.JScrollPane;
-
-
 import javax.swing.SwingConstants;
-
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-
 import javax.swing.JList;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import dbc.DatabaseController;
+import dbc.PasswordHash;
+
 
 
 /**
@@ -62,8 +51,11 @@ import javax.swing.event.ListSelectionEvent;
  */
 public class HRDAdminGUI extends JFrame {
 	
-	
-	
+	//auto generated
+	private static final long serialVersionUID = -6396009922608075141L;
+
+
+
 	/**
 	 * Nested class used as JList element
 	 * @author Jero
