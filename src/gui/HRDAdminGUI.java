@@ -113,24 +113,19 @@ public class HRDAdminGUI extends JFrame {
 	
 	
 	
-	//Variables for database access
+	//Variables for database related tasks
 	DatabaseController dbc = null;
 	private static final String PATH_TO_DB = "C:/SQLite/db/dba/HRD.db";
-	
-	//TODO adjust output
-	private static final String TABLE_QUERY = 
-			"SELECT id, firstname, name, company, emailaddress, quotaleft,"
-			+ " password FROM hrguys JOIN added_hrguy";
-	
 	private DefaultTableModel defaultModel = null;
 	private JTable table;
 	
 	
-	
-	//Variables for the admin
+	//personal Variables of the admin (user of this GUI)
 	private String adminID = null;
 	private String personalQuery = null;
 
+	
+	
 	/**
 	 * Test Unit.
 	 * Launch the application.
@@ -142,7 +137,8 @@ public class HRDAdminGUI extends JFrame {
 			public void run() {
 				try {
 					//test id is "admBob"
-					HRDAdminGUI frame = new HRDAdminGUI("admBob");
+					DatabaseController dbc = new DatabaseController(PATH_TO_DB);
+					HRDAdminGUI frame = new HRDAdminGUI(dbc, "admBob");
 					frame.setVisible(true);
 			
 				} catch (Exception e) {
@@ -156,11 +152,14 @@ public class HRDAdminGUI extends JFrame {
 	
 	/**
 	 * Create the frame and initialize database access.
+	 * @param dbc The Controller of the database
 	 * @param adminID The id of the admin currently using this GUI
 	 */
-	public HRDAdminGUI(String adminID) {
+	public HRDAdminGUI(DatabaseController dbc, String adminID) {
 		setTitle("HRDAdminGUI");
 		
+		//set dbc
+		this.dbc = dbc;
 		
 		//Admin options
 		this.adminID = adminID;
@@ -182,13 +181,11 @@ public class HRDAdminGUI extends JFrame {
 		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout(0, 0));
 		
-		//	Tabs
+		//Tabs
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		contentPane.add(tabbedPane, BorderLayout.CENTER);
 		
-		//	1st Tab
-		//TODO Add for every HR guy how many invitations he has sent out
-		
+		//	1st Tab	
 		JPanel listPanel = new JPanel();
 		listPanel.setToolTipText("Display a list of all the HR guys added by you");
 		tabbedPane.addTab("List HR guys", null, listPanel, null);
@@ -484,7 +481,7 @@ public class HRDAdminGUI extends JFrame {
 		//database options
 		try {
 			//init connection
-			initDB(PATH_TO_DB, TABLE_QUERY);
+			initDefaultModel();
 
 			//Set up table
 			table.setModel(defaultModel);
@@ -663,19 +660,23 @@ public class HRDAdminGUI extends JFrame {
 
 
 	/**
-	 * Initializes all the needed options and connections to the database.
-	 * @param path Path to the database
-	 * @param tableQuery Initial query used to obtain the personal query
+	 * Initializes the variable defautlModel for the table with
+	 * a model of the DB.
 	 * 
 	 */
-	private void initDB(String path, String tableQuery) throws SQLException {
-		dbc = new DatabaseController(path);
-		
+	private void initDefaultModel() throws SQLException {
+
 		//Personalized query - filter hrguys (only the ones added by this admin)
-		this.personalQuery = tableQuery;
-		this.personalQuery += " ON hrguys.id = added_hrguy.hrguy";
-		this.personalQuery += " WHERE added_hrguy.admin = '"+this.adminID+"'";
+		String subquery = "(SELECT * FROM hrguys g, added_hrguy a "
+				+ "WHERE g.id = a.hrguy AND a.admin = '"+this.adminID+"')";
 		
+		this.personalQuery = 
+				"SELECT t.id, t.firstname, t.name, t.company, t.emailaddress, "
+				+ "t.quotaleft, sum(case when i.id is null then 0 else 1 end) as invitations "
+				+ "FROM "+ subquery +" t LEFT JOIN invitations i "
+				+ "ON i.hrguy = t.id "
+				+ "GROUP BY t.id;";
+
 		//Model for JTable
 		this.defaultModel = this.getModel(personalQuery);
 	}
