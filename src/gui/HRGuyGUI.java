@@ -1,8 +1,10 @@
 package gui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 
+import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -47,22 +49,25 @@ import java.sql.SQLException;
  */
 public class HRGuyGUI extends JFrame {
 
+	
+	private static final long serialVersionUID = 4477612229249482358L;
+	
 	//GUI variables
 	private JPanel contentPane;
 	private JTextField tfFirstName;
 	private JTextField tfLastName;
 	private JTextField tfEmail;
 	private JTextField tfTeam;
-	private JLabel lblLeftValue;
-	private JLabel lblSentValue;
-	private JLabel lblReqValue;
+	private JLabel lblLeftValue, lblSentValue, lblReqValue;
+	private JLabel showFirstname, showLastname, showCompany, showEmail;
+	
 	
 	//Database variables
 	private DatabaseController dbc = null;
 	private static final String PATH_TO_DB = "C:/SQLite/db/dba/HRD.db";
 	
 	//Personal information
-	private String id, name, firstname, email;
+	private String id, name, firstname, company, email;
 	private int quotaleft = 0;
 	private int invitationssent = 0;
 	private JTextField tfRequest;
@@ -99,14 +104,8 @@ public class HRGuyGUI extends JFrame {
 		//Database
 		this.dbc = dbc;
 		
-		//Personal information
+		//Personal identifier
 		this.id = guyID;
-		try {
-			loadPersonalInformation(id);
-		} catch (SQLException e) {
-			handleSQLException(e, false);
-		}
-		
 		
 		
 		//Frame options
@@ -253,12 +252,12 @@ public class HRGuyGUI extends JFrame {
 		lblQuotaLeft.setBounds(12, 95, 120, 25);
 		rightPanel.add(lblQuotaLeft);
 		
-		lblSentValue = new JLabel(""+this.invitationssent);
+		lblSentValue = new JLabel("");
 		lblSentValue.setFont(new Font("Tahoma", Font.PLAIN, 15));
 		lblSentValue.setBounds(144, 51, 70, 25);
 		rightPanel.add(lblSentValue);
 		
-		lblLeftValue = new JLabel(""+this.quotaleft);
+		lblLeftValue = new JLabel("");
 		lblLeftValue.setFont(new Font("Tahoma", Font.PLAIN, 15));
 		lblLeftValue.setBounds(144, 95, 70, 25);
 		rightPanel.add(lblLeftValue);
@@ -344,19 +343,124 @@ public class HRGuyGUI extends JFrame {
 		//Tab 2 TODO
 		JPanel dataTab = new JPanel();
 		tabbedPane.addTab("Personal Data", null, dataTab, "Manage your personal data");
+		dataTab.setLayout(null);
+		
+		JLabel lblYourPersonalData = new JLabel("Your Personal Data:");
+		lblYourPersonalData.setBounds(155, 13, 125, 25);
+		dataTab.add(lblYourPersonalData);
+		
+		JLabel lblDataFirstname = new JLabel("Firstname:");
+		lblDataFirstname.setBounds(12, 51, 62, 25);
+		dataTab.add(lblDataFirstname);
+		
+		JLabel lblDataLastname = new JLabel("Lastname:");
+		lblDataLastname.setBounds(12, 89, 62, 25);
+		dataTab.add(lblDataLastname);
+		
+		JLabel lblCompany = new JLabel("Company:");
+		lblCompany.setBounds(12, 127, 62, 25);
+		dataTab.add(lblCompany);
+		
+		JLabel lblEmailaddress = new JLabel("Emailaddress:");
+		lblEmailaddress.setBounds(12, 165, 81, 25);
+		dataTab.add(lblEmailaddress);
+		
+		showFirstname = new JLabel("");
+		showFirstname.setBounds(86, 51, 194, 25);
+		dataTab.add(showFirstname);
+		
+		showLastname = new JLabel("");
+		showLastname.setBounds(86, 89, 194, 25);
+		dataTab.add(showLastname);
+		
+		showCompany = new JLabel("");
+		showCompany.setBounds(86, 127, 194, 25);
+		dataTab.add(showCompany);
+		
+		showEmail = new JLabel("");
+		showEmail.setBounds(105, 165, 194, 25);
+		dataTab.add(showEmail);
+		
+		JButton btnUpdateData = new JButton("Update Data");
+		btnUpdateData.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				try {
+					//update dialog opens where the user can change his data
+					updateDialog();					
+					
+					//refresh
+					refresh();
+				} catch (SQLException e) {
+					handleSQLException(e, true);
+				}
+			}
+
+			
+		});
+		btnUpdateData.setBounds(105, 231, 119, 25);
+		dataTab.add(btnUpdateData);
 		
 		
 		//Tab 3 TODO
 		JPanel teamTab = new JPanel();
 		tabbedPane.addTab("Team", null, teamTab, "Team statistics");
 		
-		//refresh gui	
+		
+		
+		//refresh	
 		try {
 			refresh();
 		} catch (SQLException e1) {
 			handleSQLException(e1, false);
 		}
 	}
+	
+	
+	
+	/**
+	 * Opens a JOptionPane to let the HR Guy update his personal information
+	 * after he clicked the according button on the frame.
+	 * @throws SQLException 
+	 */
+	private void updateDialog() throws SQLException {
+		//Panel with some textfields and a label
+		JPanel p = new JPanel();
+		p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+		JTextField fname, lname, comp, mail;
+		
+		//Init textfields with current Values
+		fname = new JTextField(this.firstname);
+		lname = new JTextField(this.name);
+		comp = new JTextField(this.company);
+		mail = new JTextField(this.email);
+		
+		//Add to the panel
+		p.add(new JLabel("Change your personal data by editing the textfields."));
+		p.add(fname);
+		p.add(lname);
+		p.add(comp);
+		p.add(mail);
+		
+		//dialog
+		int result = JOptionPane.showConfirmDialog(null, p, "Update personal data", 
+						JOptionPane.OK_CANCEL_OPTION);
+		
+		//obtain results (create & execute query) if okay was pressed
+		if (result == JOptionPane.OK_OPTION) {
+			String query = "UPDATE hrguys SET firstname = '" + fname.getText() +"', "
+					+ "name = '" + lname.getText() + "', company = '" + comp.getText()
+					+ "', emailaddress = '" + mail.getText() + "' "
+					+ "WHERE id = '" + this.id + "';";
+		
+			dbc.executeUpdate(query);
+		}
+			
+	}
+	
+	
+	
+	
+	
 	
 	
 	/**
@@ -390,6 +494,7 @@ public class HRGuyGUI extends JFrame {
 		this.name = res.getString("name");
 		this.firstname = res.getString("firstname");
 		this.email = res.getString("emailaddress");
+		this.company = res.getString("company");
 		this.quotaleft = res.getInt("quotaleft");
 		
 	}
@@ -433,10 +538,19 @@ public class HRGuyGUI extends JFrame {
 		JOptionPane.showMessageDialog(this, from+" -> "+to+":\n"+subject+
 				"\n"+body+"linklinklink");
 		
+		
+		//TODO add invitation to db with status pending
+		//candidate must be added before invitation can be saved (FK reference)
+		//but candidate should be added only if he completed the survey!
+		String query = "INSERT INTO invitations (hrguy, candidate, status) "
+				+ "VALUES '" + this.id + "', '" + /*candidateID +*/ "', 'Pending';";
+		
+		
+		
 
 		//Decrease this guy's quota by one
 		this.quotaleft--;
-		String query = "UPDATE hrguys SET quotaleft = "
+		query = "UPDATE hrguys SET quotaleft = "
 			+ this.quotaleft + " WHERE id = '" + this.id + "';";
 		dbc.executeUpdate(query);
 		
@@ -447,18 +561,32 @@ public class HRGuyGUI extends JFrame {
 
 
 	/**
-	 * Check the current amount of quota left, invitations sent and 
-	 * quota requested by this user & update the GUI afterwards.
+	 * Checks the current amount of quota left, invitations sent and 
+	 * quota requested by this user. Also loads the personal information again
+	 * and updates the GUI afterwards.
 	 * @throws SQLException 
 	 */
 	private void refresh() throws SQLException {
-		//TODO invitations
-		String query = "";
+		
+		//personal information
+		loadPersonalInformation(this.id);
+		this.showFirstname.setText(this.firstname);
+		this.showLastname.setText(this.name);
+		this.showCompany.setText(this.company);
+		this.showEmail.setText(this.email);
+		
+		//invitations
+		String query = "SELECT count(*) FROM invitations WHERE hrguy = '"
+				+ this.id + "';";
+		ResultSet res = dbc.execute(query);
+		res.next();
+		this.invitationssent = res.getInt("count(*)");
+		this.lblSentValue.setText(""+this.invitationssent);
 		
 		//Quota left
 		query = "SELECT quotaleft FROM hrguys WHERE id ="
 			+ " '" + this.id + "';";
-		ResultSet res = dbc.execute(query);
+		res = dbc.execute(query);
 		res.next();
 		this.quotaleft = res.getInt("quotaleft");
 		this.lblLeftValue.setText(""+this.quotaleft);
@@ -469,6 +597,7 @@ public class HRGuyGUI extends JFrame {
 		res = dbc.execute(query);
 		if (res.next())		//User has quota requested?
 			this.lblReqValue.setText(""+res.getInt("sum(amount)"));
+		
 	}
 
 
