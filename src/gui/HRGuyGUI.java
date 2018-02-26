@@ -1,52 +1,35 @@
 package gui;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
-import javafx.scene.control.Hyperlink;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import dbc.DatabaseController;
+
 import exceptions.OutOfQuotaException;
-
-import javax.swing.JTabbedPane;
-import javax.swing.JSplitPane;
-
-import java.awt.FlowLayout;
-
-import javax.swing.JLabel;
-
-import java.awt.Font;
-
-import javax.swing.JButton;
-import javax.swing.JTextField;
-
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-
-import org.sqlite.SQLiteException;
-
-import javax.swing.JList;
-import javax.swing.AbstractListModel;
-import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
 
 
 /**
@@ -64,14 +47,12 @@ import javax.swing.event.ListSelectionEvent;
  */
 public class HRGuyGUI extends JFrame {
 
-	
+	//auto generated
 	private static final long serialVersionUID = 4477612229249482358L;
 	
 	
-	
-	
 	/**
-	 * Nested class for JList-Elements
+	 * Nested class for JList-Elements.
 	 * @author Jero
 	 *
 	 */
@@ -170,7 +151,7 @@ public class HRGuyGUI extends JFrame {
 		contentPane.add(tabbedPane, BorderLayout.CENTER);
 		
 		
-		//Tab 1
+		//Tab 1 - Invitations and Quota
 		JPanel invitationsTab = new JPanel();
 		invitationsTab.setToolTipText("Send an invitation, view your invitations and quota, or request more quota.");
 		tabbedPane.addTab("Invitations", null, invitationsTab, "Form to invite a survey candidate and overview about your invitations");
@@ -383,7 +364,8 @@ public class HRGuyGUI extends JFrame {
 		lblReqValue.setBounds(144, 133, 70, 25);
 		rightPanel.add(lblReqValue);
 		
-		//Tab 2
+		
+		//Tab 2 - Manage Personal Data
 		JPanel dataTab = new JPanel();
 		dataTab.setToolTipText("View and manage your personal data.");
 		tabbedPane.addTab("Personal Data", null, dataTab, "Manage your personal data");
@@ -445,7 +427,7 @@ public class HRGuyGUI extends JFrame {
 		dataTab.add(btnUpdateData);
 		
 		
-		//Tab 3 TODO team statistics
+		//Tab 3 - Teams and link to individual team statistics
 		JPanel teamTab = new JPanel();
 		teamTab.setToolTipText("View team statistics for your teams. Access individual team statistics from here.");
 		tabbedPane.addTab("Team", null, teamTab, "Team statistics");
@@ -460,13 +442,14 @@ public class HRGuyGUI extends JFrame {
 		teamTab.add(lblTeams);		
 		
 		JButton btnOpenTeamStatistics = new JButton("Open Team Statistics");
+		btnOpenTeamStatistics.setEnabled(false);
 		btnOpenTeamStatistics.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				//Open individual team statistics for the selected team
 				TeamStatistic ts = list.getSelectedValue();
 				
-				TeamStatisticsFrame tsf = 
-						new TeamStatisticsFrame(dbc, ts.id);
+				TeamStatisticsFrame tsf = 					//id = hrguy id
+						new TeamStatisticsFrame(dbc, ts.id, ts.name, id);	
 				tsf.setVisible(true);
 			}
 		});
@@ -491,8 +474,10 @@ public class HRGuyGUI extends JFrame {
 		list.setFont(new Font("Tahoma", Font.PLAIN, 15));
 		scrollPane.setViewportView(list);
 		
-		
-		
+		JLabel lblHintSelection = new JLabel("(Hint: Select a Team from the list and open individual statistics via the button)");
+		lblHintSelection.setBounds(33, 475, 472, 25);
+		teamTab.add(lblHintSelection);
+			
 		
 		//finish	
 		try {
@@ -619,14 +604,14 @@ public class HRGuyGUI extends JFrame {
 				+ "I would like to invite you as potential new coworker.\n"
 				+ "Therefor, you need to complete a survey. The survey can "
 				+ "be accessed via this link: ";
-		//TODO link
 		
 		
 		//TODO display the invitation email approp.
+		EmailFrame preview = new EmailFrame(from, to, subject, body, "");
+		preview.setVisible(true);
 		
-		
-		JOptionPane.showMessageDialog(this, from+" -> "+to+":\n"+subject+
-				"\n"+body+"linklinklink");
+		//JOptionPane.showMessageDialog(this, from+" -> "+to+":\n"+subject+
+		//		"\n"+body+"linklinklink");
 		
 		
 		//Add a candidate

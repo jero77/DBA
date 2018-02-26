@@ -2,12 +2,12 @@ package gui;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
-
 import java.sql.SQLException;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.JScrollPane;
 import javax.swing.JLabel;
 import javax.swing.JTable;
@@ -30,8 +30,9 @@ public class TeamStatisticsFrame extends JFrame {
 	private static final long serialVersionUID = 8456004462700979408L;
 
 	//HR information
-	private int teamid;		//id of the individually selected team
-	private String guyid; 	//id of the HR guy
+	private int teamid;			//id of the individually selected team
+	private String guyid; 		//id of the HR guy
+	private String teamname; 	//name of the team
 
 	//Database
 	private DatabaseController dbc;
@@ -51,7 +52,7 @@ public class TeamStatisticsFrame extends JFrame {
 				try {
 					//Test id is 1 (Finance Team) of test user
 					DatabaseController dbc = new DatabaseController(PATH);
-					TeamStatisticsFrame frame = new TeamStatisticsFrame(dbc, 1, "test");
+					TeamStatisticsFrame frame = new TeamStatisticsFrame(dbc, 1, "Finance", "test");
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -64,14 +65,18 @@ public class TeamStatisticsFrame extends JFrame {
 	 * Create the frame.
 	 * @param dbc Controller for the database
 	 * @param id The id of the team
+	 * @param teamname Name of the team
+	 * @param guyid ID of the HR Guy viewing statistics
 	 */
-	public TeamStatisticsFrame(DatabaseController dbc, int teamid, String guyid) {
+	public TeamStatisticsFrame(DatabaseController dbc, 
+			int teamid, String teamname, String guyid) {
 		setTitle("Team Statistics");
 		
 		//Init HR information
 		this.teamid = teamid;
 		this.dbc = dbc;
 		this.guyid = guyid;
+		this.teamname = teamname;
 		
 		//Frame options
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -92,21 +97,23 @@ public class TeamStatisticsFrame extends JFrame {
 		table = new JTable();
 		scrollPane.setViewportView(table);
 		//Get Table content
+		
 		String query = 
-				"SELECT t.name as Team, c.firstname as Firstname, c.name as Lastname, "
+				"SELECT c.firstname as Firstname, c.name as Lastname, "
 				+ "i.status as Status "
 				+ "FROM teams t, invitations i, candidates c "
 				+ "WHERE i.candidate = c.id AND i.hrguy = '" + this.guyid + "' "
 						+ "AND c.team = t.name AND t.id = " + this.teamid + ";";
 		try {
-			table.setModel(this.dbc.executeAndBuildTable(query));
+			DefaultTableModel model = this.dbc.executeAndBuildTable(query);
+			table.setModel(model);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		
 		
 		JLabel lblNewLabel = new JLabel("Individual Team Statistics"
-				+ " for the Team with id "+this.teamid);
+				+ " for the Team " + this.teamname);
 		lblNewLabel.setBounds(12, 13, 300, 25);
 		panel.add(lblNewLabel);
 		
