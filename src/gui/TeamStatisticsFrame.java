@@ -20,10 +20,13 @@ import dbc.DatabaseController;
  * It contains information about:
  * 		- the team members
  * 		- their invitation's status (survey pending/completed)
- * 		- 
+ * 		- some more statistics
  * @author Jero
  */
 public class TeamStatisticsFrame extends JFrame {
+	
+	//TODO Survey Frame
+	//TODO Collect and aggregate survey information
 	
 	
 	//auto generated
