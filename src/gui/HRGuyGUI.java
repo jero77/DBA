@@ -9,6 +9,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
 
 import dbc.DatabaseController;
 import exceptions.OutOfQuotaException;
@@ -32,6 +33,11 @@ import java.awt.event.WindowEvent;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+
+import org.sqlite.SQLiteException;
 
 
 /**
@@ -71,6 +77,7 @@ public class HRGuyGUI extends JFrame {
 	private int quotaleft = 0;
 	private int invitationssent = 0;
 	private JTextField tfRequest;
+	private JTable table;
 	
 	
 	/**
@@ -340,7 +347,7 @@ public class HRGuyGUI extends JFrame {
 		lblReqValue.setBounds(144, 133, 70, 25);
 		rightPanel.add(lblReqValue);
 		
-		//Tab 2 TODO
+		//Tab 2
 		JPanel dataTab = new JPanel();
 		tabbedPane.addTab("Personal Data", null, dataTab, "Manage your personal data");
 		dataTab.setLayout(null);
@@ -401,9 +408,21 @@ public class HRGuyGUI extends JFrame {
 		dataTab.add(btnUpdateData);
 		
 		
-		//Tab 3 TODO
+		//Tab 3 TODO team statistics
 		JPanel teamTab = new JPanel();
 		tabbedPane.addTab("Team", null, teamTab, "Team statistics");
+		teamTab.setLayout(null);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(12, 51, 743, 291);
+		teamTab.add(scrollPane);
+		
+		table = new JTable();
+		scrollPane.setViewportView(table);
+		
+		JLabel lblTeams = new JLabel("Teams:");
+		lblTeams.setBounds(12, 13, 56, 25);
+		teamTab.add(lblTeams);
 		
 		
 		
@@ -503,14 +522,17 @@ public class HRGuyGUI extends JFrame {
 
 
 	/**
-	 * Send out an invitation to the candidate. An invitation can only be sent
-	 * if the guy has quota left (>0)
+	 * Sends out an invitation to the candidate. An invitation can only be sent
+	 * if the guy has quota left (>0). Furthermore, adds a candidate, the invitation
+	 * and the team (if not exists yet for this HR Guy) to the database. 
 	 * @param fields
 	 * @throws SQLException 
 	 * @throws OutOfQuotaException 
 	 */
 	private void sendInvitation(String[] fields) 
 			throws SQLException, OutOfQuotaException  {
+		
+		String query;
 		
 		//Check quota constraint
 		refresh();
@@ -539,13 +561,20 @@ public class HRGuyGUI extends JFrame {
 				"\n"+body+"linklinklink");
 		
 		
-		//TODO add invitation to db with status pending
-		//candidate must be added before invitation can be saved (FK reference)
-		//but candidate should be added only if he completed the survey!
-		String query = "INSERT INTO invitations (hrguy, candidate, status) "
-				+ "VALUES '" + this.id + "', '" + /*candidateID +*/ "', 'Pending';";
+		//Add a candidate
+		query = "INSERT INTO candidates (name, firstname, email, team) "
+				+ "VALUES ('" + fields[0] + "', '" + fields[1] + "', "
+				+ "'" + fields[2] + "', '" + fields[3] + "');";
+		dbc.executeUpdate(query);
 		
 		
+		//Add the invitation (status ending) which triggers insert into teams
+		String subquery = "(SELECT id FROM candidates WHERE name = '" + fields[0]
+				+ "' AND firstname = '" + fields[1] + "' AND email = '"
+				+ fields[2] + "' AND team = '" + fields[3] + "')";
+		query = "INSERT INTO invitations (hrguy, candidate, status) "
+				+ "VALUES ('" + this.id + "', "+ subquery +", 'Pending');";
+		dbc.executeUpdate(query);	//Uniqueness checked by database triggers
 		
 
 		//Decrease this guy's quota by one
@@ -554,16 +583,19 @@ public class HRGuyGUI extends JFrame {
 			+ this.quotaleft + " WHERE id = '" + this.id + "';";
 		dbc.executeUpdate(query);
 		
-		//Update label
-		this.lblLeftValue.setText(""+this.quotaleft);
+		refresh();
 	}
 
 
 
 	/**
-	 * Checks the current amount of quota left, invitations sent and 
-	 * quota requested by this user. Also loads the personal information again
-	 * and updates the GUI afterwards.
+	 * Updates all the information from the database shown in the GUI:
+	 * 		- Reload the current amount of quota left, invitations sent and 
+	 * 			quota requested by this user
+	 * 		- Reload the personal information
+	 * 		- Reload team information
+	 * 
+	 * Updates the GUI afterwards.
 	 * @throws SQLException 
 	 */
 	private void refresh() throws SQLException {
@@ -598,6 +630,16 @@ public class HRGuyGUI extends JFrame {
 		if (res.next())		//User has quota requested?
 			this.lblReqValue.setText(""+res.getInt("sum(amount)"));
 		
+		
+		
+		//Team information
+		query = "SELECT t.name as Team, count(*) as Members "
+				+ "FROM teams t, candidates c, invitations i "
+				+ "WHERE t.hrguy = '" + this.id + "' AND t.hrguy = i.hrguy "
+				+ "AND i.candidate = c.id AND c.team = t.name "
+				+ "GROUP BY t.name;";
+		DefaultTableModel model = dbc.executeAndBuildTable(query);
+		this.table.setModel(model);
 	}
 
 
