@@ -4,7 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 
+import javafx.scene.control.Hyperlink;
+
 import javax.swing.BoxLayout;
+import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -39,6 +42,12 @@ import javax.swing.JTable;
 
 import org.sqlite.SQLiteException;
 
+import javax.swing.JList;
+import javax.swing.AbstractListModel;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
+
 
 /**
  * This class provides a graphical user interface for the HR guys.
@@ -57,6 +66,33 @@ public class HRGuyGUI extends JFrame {
 
 	
 	private static final long serialVersionUID = 4477612229249482358L;
+	
+	
+	
+	
+	/**
+	 * Nested class for JList-Elements
+	 * @author Jero
+	 *
+	 */
+	class TeamStatistic {
+		//Class variables (database columns)
+		int id;
+		String name;
+		int members;
+		//Constructor
+		TeamStatistic (int id, String name, int members) {
+			this.id = id;
+			this.name = name;
+			this.members = members;
+		}
+
+		public String toString() {
+			return "Team " + name + " has " + members + " members";
+		}
+	}
+	
+	
 	
 	//GUI variables
 	private JPanel contentPane;
@@ -77,7 +113,7 @@ public class HRGuyGUI extends JFrame {
 	private int quotaleft = 0;
 	private int invitationssent = 0;
 	private JTextField tfRequest;
-	private JTable table;
+	private JList<TeamStatistic> list;
 	
 	
 	/**
@@ -136,7 +172,7 @@ public class HRGuyGUI extends JFrame {
 		
 		//Tab 1
 		JPanel invitationsTab = new JPanel();
-		invitationsTab.setToolTipText("");
+		invitationsTab.setToolTipText("Send an invitation, view your invitations and quota, or request more quota.");
 		tabbedPane.addTab("Invitations", null, invitationsTab, "Form to invite a survey candidate and overview about your invitations");
 		invitationsTab.setLayout(null);
 		
@@ -349,6 +385,7 @@ public class HRGuyGUI extends JFrame {
 		
 		//Tab 2
 		JPanel dataTab = new JPanel();
+		dataTab.setToolTipText("View and manage your personal data.");
 		tabbedPane.addTab("Personal Data", null, dataTab, "Manage your personal data");
 		dataTab.setLayout(null);
 		
@@ -410,23 +447,54 @@ public class HRGuyGUI extends JFrame {
 		
 		//Tab 3 TODO team statistics
 		JPanel teamTab = new JPanel();
+		teamTab.setToolTipText("View team statistics for your teams. Access individual team statistics from here.");
 		tabbedPane.addTab("Team", null, teamTab, "Team statistics");
 		teamTab.setLayout(null);
 		
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(12, 51, 743, 291);
+		scrollPane.setBounds(12, 51, 743, 407);
 		teamTab.add(scrollPane);
-		
-		table = new JTable();
-		scrollPane.setViewportView(table);
 		
 		JLabel lblTeams = new JLabel("Teams:");
 		lblTeams.setBounds(12, 13, 56, 25);
-		teamTab.add(lblTeams);
+		teamTab.add(lblTeams);		
+		
+		JButton btnOpenTeamStatistics = new JButton("Open Team Statistics");
+		btnOpenTeamStatistics.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				//Open individual team statistics for the selected team
+				TeamStatistic ts = list.getSelectedValue();
+				
+				TeamStatisticsFrame tsf = 
+						new TeamStatisticsFrame(dbc, ts.id);
+				tsf.setVisible(true);
+			}
+		});
+		btnOpenTeamStatistics.setBounds(589, 475, 166, 25);
+		teamTab.add(btnOpenTeamStatistics);
+
+
+		list = new JList<TeamStatistic>();
+		list.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent arg0) {
+				//disable or enable button for individual team statistics
+				if (arg0.getValueIsAdjusting() == false) {
+					if (list.getSelectedIndex() == -1) {
+						btnOpenTeamStatistics.setEnabled(false);
+					} else {
+						btnOpenTeamStatistics.setEnabled(true);
+					}
+				}
+			}
+		});
+		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		list.setFont(new Font("Tahoma", Font.PLAIN, 15));
+		scrollPane.setViewportView(list);
 		
 		
 		
-		//refresh	
+		
+		//finish	
 		try {
 			refresh();
 		} catch (SQLException e1) {
@@ -633,13 +701,38 @@ public class HRGuyGUI extends JFrame {
 		
 		
 		//Team information
-		query = "SELECT t.name as Team, count(*) as Members "
+		DefaultListModel<TeamStatistic> model = getListModel();
+		list.setModel(model);
+	}
+
+
+
+	/**
+	 * Get a model for the JList showing information about the teams
+	 * of the HR Guy (user). Uses nested class as list elements.
+	 * @return A model for the JList
+	 * @throws SQLException
+	 */
+	private DefaultListModel<TeamStatistic> getListModel() throws SQLException {
+		
+		//get Teams of this HR Guy together with the number of members
+		String query = "SELECT t.id as id, t.name as team, count(*) as members "
 				+ "FROM teams t, candidates c, invitations i "
 				+ "WHERE t.hrguy = '" + this.id + "' AND t.hrguy = i.hrguy "
 				+ "AND i.candidate = c.id AND c.team = t.name "
 				+ "GROUP BY t.name;";
-		DefaultTableModel model = dbc.executeAndBuildTable(query);
-		this.table.setModel(model);
+		ResultSet res = dbc.execute(query);
+		
+		DefaultListModel<TeamStatistic> model = new DefaultListModel<TeamStatistic>();
+		while (res.next()) {
+			int id = res.getInt("id");
+			String name = res.getString("team");
+			int members = res.getInt("members");
+			
+			model.addElement(new TeamStatistic(id, name, members));
+		}
+		
+		return model;
 	}
 
 

@@ -2,24 +2,35 @@ package gui;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
+
 import java.sql.SQLException;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
-import javax.swing.BoxLayout;
 import javax.swing.JScrollPane;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 
 import dbc.DatabaseController;
 
+/**
+ * This class provides a frame for showing the statistics of 
+ * individual teams. Can be accessed by the HRGuyGUI (tab 3).
+ * It contains information about:
+ * 		- the team members
+ * 		- their invitation's status (survey pending/completed)
+ * 		- 
+ * @author Jero
+ */
 public class TeamStatisticsFrame extends JFrame {
 	
 	
+	//auto generated
+	private static final long serialVersionUID = 8456004462700979408L;
+
 	//HR information
-	private String id;		//id of the user
-	private String team;	//team name
+	private int teamid;		//id of the individually selected team
 
 	//Database
 	private DatabaseController dbc;
@@ -37,10 +48,9 @@ public class TeamStatisticsFrame extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					//Test id is 'test', team is 'Finance'
+					//Test id is 1 (Finance Team)
 					DatabaseController dbc = new DatabaseController(PATH);
-					TeamStatisticsFrame frame = 
-							new TeamStatisticsFrame(dbc, "test", "Finance");
+					TeamStatisticsFrame frame = new TeamStatisticsFrame(dbc, 1);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -51,13 +61,14 @@ public class TeamStatisticsFrame extends JFrame {
 
 	/**
 	 * Create the frame.
+	 * @param dbc Controller for the database
+	 * @param id The id of the
 	 */
-	public TeamStatisticsFrame(DatabaseController dbc, String id, String team) {
-		setTitle("Team Statistics - " + team);
+	public TeamStatisticsFrame(DatabaseController dbc, int teamid) {
+		setTitle("Team Statistics");
 		
 		//Init HR information
-		this.id = id;
-		this.team = team;
+		this.teamid = teamid;
 		this.dbc = dbc;
 		
 		//Frame options
@@ -83,22 +94,18 @@ public class TeamStatisticsFrame extends JFrame {
 				"SELECT t.name as Team, c.firstname as Firstname, c.name as Lastname, "
 				+ "i.status as Status "
 				+ "FROM teams t, invitations i, candidates c "
-				+ "WHERE i.hrguy = '" + this.id + "' AND i.candidate = c.id "
-				+ "AND c.team = t.name AND t.name = '" + this.team + "';";
+				+ "WHERE i.candidate = c.id AND c.team = t.name AND t.id = " + this.teamid + ";";
 		try {
-			table.setModel(dbc.executeAndBuildTable(query));
+			table.setModel(this.dbc.executeAndBuildTable(query));
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		
 		
-		JLabel lblNewLabel = new JLabel("Individual Team Statistics for the Team");
-		lblNewLabel.setBounds(12, 13, 231, 25);
+		JLabel lblNewLabel = new JLabel("Individual Team Statistics"
+				+ " for the Team with id "+this.teamid);
+		lblNewLabel.setBounds(12, 13, 300, 25);
 		panel.add(lblNewLabel);
-		
-		JLabel lblTeam = new JLabel(this.team);
-		lblTeam.setBounds(245, 13, 116, 25);
-		panel.add(lblTeam);
 		
 		
 	}
