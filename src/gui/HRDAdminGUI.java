@@ -486,7 +486,7 @@ public class HRDAdminGUI extends JFrame {
 		} 
 		
 		
-		//Can only be after dbc initialization
+		//Can only be initialized after default model initialization
 		list = new JList<Request>();
 		try {
 			list.setModel(getListModel());
