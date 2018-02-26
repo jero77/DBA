@@ -31,6 +31,7 @@ public class TeamStatisticsFrame extends JFrame {
 
 	//HR information
 	private int teamid;		//id of the individually selected team
+	private String guyid; 	//id of the HR guy
 
 	//Database
 	private DatabaseController dbc;
@@ -48,9 +49,9 @@ public class TeamStatisticsFrame extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					//Test id is 1 (Finance Team)
+					//Test id is 1 (Finance Team) of test user
 					DatabaseController dbc = new DatabaseController(PATH);
-					TeamStatisticsFrame frame = new TeamStatisticsFrame(dbc, 1);
+					TeamStatisticsFrame frame = new TeamStatisticsFrame(dbc, 1, "test");
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -62,14 +63,15 @@ public class TeamStatisticsFrame extends JFrame {
 	/**
 	 * Create the frame.
 	 * @param dbc Controller for the database
-	 * @param id The id of the
+	 * @param id The id of the team
 	 */
-	public TeamStatisticsFrame(DatabaseController dbc, int teamid) {
+	public TeamStatisticsFrame(DatabaseController dbc, int teamid, String guyid) {
 		setTitle("Team Statistics");
 		
 		//Init HR information
 		this.teamid = teamid;
 		this.dbc = dbc;
+		this.guyid = guyid;
 		
 		//Frame options
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -94,7 +96,8 @@ public class TeamStatisticsFrame extends JFrame {
 				"SELECT t.name as Team, c.firstname as Firstname, c.name as Lastname, "
 				+ "i.status as Status "
 				+ "FROM teams t, invitations i, candidates c "
-				+ "WHERE i.candidate = c.id AND c.team = t.name AND t.id = " + this.teamid + ";";
+				+ "WHERE i.candidate = c.id AND i.hrguy = '" + this.guyid + "' "
+						+ "AND c.team = t.name AND t.id = " + this.teamid + ";";
 		try {
 			table.setModel(this.dbc.executeAndBuildTable(query));
 		} catch (SQLException e) {
