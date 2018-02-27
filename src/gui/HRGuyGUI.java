@@ -7,7 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-
+import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -28,7 +28,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import dbc.DatabaseController;
-
 import exceptions.OutOfQuotaException;
 
 
@@ -84,6 +83,8 @@ public class HRGuyGUI extends JFrame {
 	private JLabel lblLeftValue, lblSentValue, lblReqValue;
 	private JLabel showFirstname, showLastname, showCompany, showEmail;
 	
+	//Survey
+	private static final String PATH_TO_SURVEY = "C:/Users/Jero/git/DBA/html/survey.html";
 	
 	//Database variables
 	private DatabaseController dbc = null;
@@ -95,6 +96,7 @@ public class HRGuyGUI extends JFrame {
 	private int invitationssent = 0;
 	private JTextField tfRequest;
 	private JList<TeamStatistic> list;
+		
 	
 	
 	/**
@@ -127,9 +129,9 @@ public class HRGuyGUI extends JFrame {
 
 		//Database
 		this.dbc = dbc;
-		
 		//Personal identifier
 		this.id = guyID;
+
 		
 		
 		//Frame options
@@ -595,38 +597,31 @@ public class HRGuyGUI extends JFrame {
 			throw new OutOfQuotaException(message);
 		}
 		
+		//Get email information
 		String from = this.email;
 		String to = fields[2];
 		String subject = "HRD Inc. - Survey Invitation";
-		
-		//body			first name		  last name
-		String body = "Hello " + fields[1] + " " + fields[0] + ",\n"
-				+ "I would like to invite you as potential new coworker.\n"
-				+ "Therefor, you need to complete a survey. The survey can "
-				+ "be accessed via this link: ";
-		
-		
-		//TODO display the invitation email approp.
-		EmailFrame preview = new EmailFrame(from, to, subject, body, "");
-		preview.setVisible(true);
-		
-		//JOptionPane.showMessageDialog(this, from+" -> "+to+":\n"+subject+
-		//		"\n"+body+"linklinklink");
+		String name = fields[1] + " " + fields[0];
+		String body = createBody(name, "file:///" + PATH_TO_SURVEY);
 		
 		
 		//Add a candidate
+		int candidateID;
 		query = "INSERT INTO candidates (name, firstname, email, team) "
 				+ "VALUES ('" + fields[0] + "', '" + fields[1] + "', "
 				+ "'" + fields[2] + "', '" + fields[3] + "');";
 		dbc.executeUpdate(query);
 		
+		query = "SELECT last_insert_rowid();";
+		ResultSet key = dbc.execute(query);
+		if (key.next())
+			candidateID = key.getInt("last_insert_rowid()");
+		else
+			throw new SQLException("Creation failed, no rows affected!");
 		
 		//Add the invitation (status ending) which triggers insert into teams
-		String subquery = "(SELECT id FROM candidates WHERE name = '" + fields[0]
-				+ "' AND firstname = '" + fields[1] + "' AND email = '"
-				+ fields[2] + "' AND team = '" + fields[3] + "')";
 		query = "INSERT INTO invitations (hrguy, candidate, status) "
-				+ "VALUES ('" + this.id + "', "+ subquery +", 'Pending');";
+				+ "VALUES ('" + this.id + "', "+ candidateID +", 'Pending');";
 		dbc.executeUpdate(query);	//Uniqueness checked by database triggers
 		
 
@@ -635,9 +630,35 @@ public class HRGuyGUI extends JFrame {
 		query = "UPDATE hrguys SET quotaleft = "
 			+ this.quotaleft + " WHERE id = '" + this.id + "';";
 		dbc.executeUpdate(query);
+
+		
+		//Preview the invitation email
+		EmailFrame preview = new EmailFrame(dbc, candidateID, from, to, subject, body);
+		preview.setVisible(true);
 		
 		refresh();
 	}
+
+
+	/**
+	 * Creates the body of an email sent to invite a survey candidate
+	 * in HTML style.
+	 * @param name Name of the receiver
+	 * @param link Unique link to the survey
+	 * @return
+	 */
+	private String createBody(String name, String link) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("<html><body>");
+		sb.append("Hello "+name+",<br>");
+		sb.append("I would like to invite you as potential new coworker.<br>");
+		sb.append("Therefor, you need to complete a survey. The survey can ");
+		sb.append("be accessed via the following link:<br>");
+		sb.append("<a href=\"" + link + "\">Link to Survey</a><br>");
+		sb.append("Thank you.</body></html>");
+		return sb.toString();
+	}
+
 
 
 
@@ -756,6 +777,7 @@ public class HRGuyGUI extends JFrame {
 		if (showDialog)
 			JOptionPane.showMessageDialog(this, "An error occured!\n"+e.getMessage());
 	}
+
 	
 	
 	/**
