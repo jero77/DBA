@@ -129,6 +129,27 @@ public class DatabaseController {
 	
 	
 	/**
+	 * Inserts data into the database and returns the keys generated for this
+	 * insert query (auto increment). THIS FUNCTION DOES NOT WORK BECAUSE THE
+	 * SQLITE JDBC DRIVER SEEMS TO NOT SUPPORT THIS FUNCTIONALITY!
+	 * @param query	INSERT statement to execute.
+	 * @return ResultSet containing generated keys
+	 * @throws SQLException
+	 */
+	public ResultSet insertReturnKey(String query) throws SQLException {
+		PreparedStatement stmt = conn.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
+		int rowsAffected = stmt.executeUpdate(query);
+		if (rowsAffected == 0)
+			throw new SQLException("Creation failed, no rows affected!");
+	
+		return stmt.getGeneratedKeys(); 
+	}
+	
+	
+	
+	
+	
+	/**
 	 * Test Unit
 	 * Establishes a connection to a sample database, executes a query and
 	 * prints the result.
