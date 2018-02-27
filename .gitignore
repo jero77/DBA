@@ -23,6 +23,11 @@ hs_err_pid*
 /bin/
 
 
-#some eclipse files
+# Some eclipse files
 .project
 .classpath
+
+# Pictures
+*.jpg
+*.jpeg
+*.png
