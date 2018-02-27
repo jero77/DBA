@@ -18,6 +18,13 @@ import javax.swing.event.HyperlinkListener;
 
 import dbc.DatabaseController;
 
+/**
+ * This class provides a frame for previewing how an invitation email 
+ * sent from a HR Guy to a survey candidate could look like.
+ * The email body contains a link which enables the survey.
+ * @author Jero
+ *
+ */
 public class EmailFrame extends JFrame {
 	
 	

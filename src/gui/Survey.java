@@ -2,29 +2,36 @@ package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
 import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JTextField;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
-import javax.swing.JRadioButton;
-import javax.swing.ButtonGroup;
 import javax.swing.JSlider;
+import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.border.EmptyBorder;
 
 import dbc.DatabaseController;
 
+/**
+ * This class provides a survey for the candidates invited by the HR Guys.
+ * @author Jero
+ *
+ */
 public class Survey extends JFrame implements ActionListener {
 
+	//auto generated
+	private static final long serialVersionUID = -1911554739576446511L;
+	
+	
+	//Frame variables
 	private JPanel contentPane;
 	private JTextField tfFirstname;
 	private JTextField tfLastname;
