@@ -2,15 +2,21 @@ package gui;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
+import javax.swing.JEditorPane;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
-import javax.swing.JSeparator;
-import javax.swing.JTextPane;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import java.awt.Font;
+import javax.swing.JSeparator;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
+
+import dbc.DatabaseController;
 
 public class EmailFrame extends JFrame {
 	
@@ -20,9 +26,16 @@ public class EmailFrame extends JFrame {
 
 
 	//Email variables
-	private String from, to, subject, body, link;
+	private String from, to, subject, body;
+	
+	//Database
+	private DatabaseController dbc;
+	
+	//Candidate
+	private int candidateID;
 	
 
+	//JFrame
 	private JPanel contentPane;
 
 	/**
@@ -37,9 +50,8 @@ public class EmailFrame extends JFrame {
 					String from = "somesender@mail.com";
 					String to = "somereceiver@mail.com";
 					String subject = "Test";
-					String body = "Hello, this is for test purposes.";
-					String link = "LINK";
-					EmailFrame frame = new EmailFrame(from, to, subject, body, link);
+					String body = "Hello, this is for test purposes without a link.";
+					EmailFrame frame = new EmailFrame(null, 1, from, to, subject, body);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -50,13 +62,15 @@ public class EmailFrame extends JFrame {
 
 	/**
 	 * Create the frame previewing an email.
+	 * @param dbc Controller of the database
+	 * @param candidateID ID of the candidate
 	 * @param from Email of the sender
-	 * @param to Recevier of the email
+	 * @param to Receiver of the email
 	 * @param subject Subject of the email
 	 * @param body Body of the email
-	 * @param link A unique link contained in the body.
 	 */
-	public EmailFrame(String from, String to, String subject, String body, String link) {
+	public EmailFrame(DatabaseController dbc, int candidateID, String from,
+			String to, String subject, String body) {
 		super("Email Preview");
 		
 		//Email
@@ -64,8 +78,12 @@ public class EmailFrame extends JFrame {
 		this.to = to;
 		this.subject = subject;
 		this.body = body;
-		this.link = link;
 		
+		//Candidate
+		this.candidateID = candidateID;
+		
+		//Database
+		this.dbc = dbc;
 		
 		//Frame options
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -111,10 +129,37 @@ public class EmailFrame extends JFrame {
 		scrollPane.setBounds(12, 101, 548, 229);
 		panel.add(scrollPane);
 		
-		JTextPane textPane = new JTextPane();
-		textPane.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		textPane.setEditable(false);
-		textPane.setText(this.body);
-		scrollPane.setViewportView(textPane);
+		JEditorPane editorPane = new JEditorPane();
+		editorPane.addHyperlinkListener(new HyperlinkListener() {
+			public void hyperlinkUpdate(HyperlinkEvent arg0) {
+				if (arg0.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+					//Check if link is still valid (unique usable)
+					String query = "SELECT status, firstname, name FROM invitations i, candidates c"
+							+ " WHERE i.candidate = " + candidateID + " AND c.id = i.candidate;";
+					try {
+						ResultSet res = dbc.execute(query);
+						res.next();
+						
+						if (res.getString("status").equals("Pending")) {
+							//Show survey
+							Survey survey = new Survey(dbc, candidateID,
+									res.getString("firstname"), res.getString("name"));
+							survey.setVisible(true);
+							
+						} else {
+							JOptionPane.showMessageDialog(null, "The link is not valid anymore!",
+									"Error", JOptionPane.ERROR_MESSAGE);
+						}
+					} catch (SQLException e) {
+						JOptionPane.showMessageDialog(null, e.getMessage(),
+								"Error", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			}
+		});
+		editorPane.setContentType("text/html");
+		editorPane.setText(this.body);
+		editorPane.setEditable(false);
+		scrollPane.setViewportView(editorPane);
 	}
 }
