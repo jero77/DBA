@@ -56,7 +56,8 @@ public class HRGuyLogin extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					HRGuyLogin frame = new HRGuyLogin(PATH_TO_DB);
+					DatabaseController dbc = new DatabaseController(PATH_TO_DB);
+					HRGuyLogin frame = new HRGuyLogin(dbc);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -67,17 +68,13 @@ public class HRGuyLogin extends JFrame {
 
 	/**
 	 * Create the frame to login to the HRGuyGUI.
-	 * @param path The path to the database
+	 * @param dbc Controller of the database
 	 */
-	public HRGuyLogin(String path) {
+	public HRGuyLogin(DatabaseController dbc) {
 		setTitle("Login to HRGuyGUI");
 		
 		//Database options
-		try {
-			dbc = new DatabaseController(path);
-		} catch (SQLException e) {
-			handleSQLException(e, true);
-		}
+		this.dbc = dbc;
 		
 		
 		
@@ -289,6 +286,7 @@ public class HRGuyLogin extends JFrame {
 		
 		//Exit frame
 		this.dispose();
+		System.exit(0);
 	}
 	
 	

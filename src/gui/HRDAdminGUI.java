@@ -31,7 +31,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -119,18 +118,27 @@ public class HRDAdminGUI extends JFrame {
 	
 	
 	/**
-	 * Test Unit.
+	 * Test Unit. AdminID is passed as single commandline argument or set
+	 * default to "admBob" if no commandline argument is defined (or too much).
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
+		
+		final String adminID;	//default (no commandline arg) is "admBob"
+		
+		if (args.length == 2)
+			adminID = args[1];
+		else
+			adminID = "admBob";
+		
 		
 		//Set up admin gui
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					//test id is "admBob"
+					
 					DatabaseController dbc = new DatabaseController(PATH_TO_DB);
-					HRDAdminGUI frame = new HRDAdminGUI(dbc, "admBob");
+					HRDAdminGUI frame = new HRDAdminGUI(dbc, adminID);
 					frame.setVisible(true);
 			
 				} catch (Exception e) {
@@ -195,9 +203,10 @@ public class HRDAdminGUI extends JFrame {
 		refreshButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
-				//Refresh the table
+				//Refresh the table and the list
 				try {
 					table.setModel(getModel(personalQuery));
+					list.setModel(getListModel());
 				} catch (SQLException e1) {
 					handleSQLException(e1, true);
 				}
@@ -511,6 +520,14 @@ public class HRDAdminGUI extends JFrame {
 		});
 		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		scrollPane_1.setViewportView(list);
+		
+		//Refresh button on quota tab
+		JButton btnRefresh = new JButton("Refresh");
+		btnRefresh.setEnabled(true);
+		btnRefresh.setBounds(666, 437, 101, 25);
+		//same actionlistener as refreshbutton from tab 1
+		btnRefresh.addActionListener(refreshButton.getActionListeners()[0]);
+		quotaPanel.add(btnRefresh);
 	}
 	
 	
@@ -637,7 +654,7 @@ public class HRDAdminGUI extends JFrame {
 			}
 		}
 		query += ");";
-		
+
 		dbc.executeUpdate(query);
 
 		
@@ -713,5 +730,6 @@ public class HRDAdminGUI extends JFrame {
 		
 		//Exit frame
 		this.dispose();
+		System.exit(0);
 	}
 }

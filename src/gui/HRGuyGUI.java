@@ -702,7 +702,8 @@ public class HRGuyGUI extends JFrame {
 		res = dbc.execute(query);
 		if (res.next())		//User has quota requested?
 			this.lblReqValue.setText(""+res.getInt("sum(amount)"));
-		
+		else
+			this.lblReqValue.setText("0");
 		
 		
 		//Team information
@@ -806,5 +807,6 @@ public class HRGuyGUI extends JFrame {
 		
 		//Exit frame
 		this.dispose();
+		System.exit(0);
 	}
 }
