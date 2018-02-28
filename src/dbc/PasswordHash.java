@@ -12,7 +12,7 @@ public class PasswordHash {
 		
 	/**
 	 * Calculates an MD5-Hash for the given password
-	 * @param passwordToHash
+	 * @param passwordToHash The password which shall be hashed
 	 * @return The hashed password
 	 */
 	public static String hashPassword(String passwordToHash) {

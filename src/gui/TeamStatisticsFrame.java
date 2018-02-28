@@ -68,7 +68,7 @@ public class TeamStatisticsFrame extends JFrame {
 	/**
 	 * Create the frame.
 	 * @param dbc Controller for the database
-	 * @param id The id of the team
+	 * @param teamid The ID of the team
 	 * @param teamname Name of the team
 	 * @param guyid ID of the HR Guy viewing statistics
 	 */

@@ -555,6 +555,7 @@ public class HRGuyGUI extends JFrame {
 	/**
 	 * Loads the personal information of the user with the given id.
 	 * @param id ID of the user
+	 * @throws SQLException
 	 */
 	private void loadPersonalInformation(String id) throws SQLException{
 		//Query DB
@@ -577,9 +578,9 @@ public class HRGuyGUI extends JFrame {
 
 	/**
 	 * Sends out an invitation to the candidate. An invitation can only be sent
-	 * if the guy has quota left (>0). Furthermore, adds a candidate, the invitation
+	 * if the guy has quota left. Furthermore, adds a candidate, the invitation
 	 * and the team (if not exists yet for this HR Guy) to the database. 
-	 * @param fields
+	 * @param fields Content of the textfields
 	 * @throws SQLException 
 	 * @throws OutOfQuotaException 
 	 */
@@ -644,7 +645,7 @@ public class HRGuyGUI extends JFrame {
 	 * in HTML style.
 	 * @param name Name of the receiver
 	 * @param link Unique link to the survey
-	 * @return
+	 * @return Body that got created
 	 */
 	private String createBody(String name, String link) {
 		StringBuilder sb = new StringBuilder();
@@ -747,6 +748,7 @@ public class HRGuyGUI extends JFrame {
 	/**
 	 * Validates the inputs of the text fields of the invite-form.
 	 * Right now it only checks whether one of the fields is empty.
+	 * @param fields Content of the textfields
 	 * @return Returns whether the inputs are valid or not
 	 */
 	private boolean validInputs(String[] fields) {

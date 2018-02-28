@@ -25,7 +25,7 @@ public class ParallelAccess {
 	/**
 	 * Starts a admin gui and a HR guy gui (login) with a shared DatabaseController.
 	 * AdminID is args[0] or default "admBob".
-	 * @param args
+	 * @param args Command line argument (contains adminID)
 	 */
 	public static void main(String[] args) {
 		

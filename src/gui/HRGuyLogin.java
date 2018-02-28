@@ -177,8 +177,11 @@ public class HRGuyLogin extends JFrame {
 
 	/**
 	 * Perform a login with the information the user entered into the textfields.
+	 * @param name Entered login name
+	 * @param password Entered password (hidden)
 	 * @throws SQLException
 	 * @throws IllegalArgumentException
+	 * @throws AuthenticationException
 	 */
 	private void login(String name, String password) 
 			throws SQLException, IllegalArgumentException, AuthenticationException {

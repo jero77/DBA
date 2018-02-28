@@ -536,7 +536,7 @@ public class HRDAdminGUI extends JFrame {
 
 	/**
 	 * Obtain the current requests of all HR Guys this admin added to
-	 * the database & update the JList accordingly.
+	 * the database and update the JList accordingly.
 	 * @return List model for the JList
 	 * @throws SQLException 
 	 * 
@@ -615,6 +615,7 @@ public class HRDAdminGUI extends JFrame {
 	/**
 	 * Validates the inputs of the text fields of the add-form.
 	 * Right now it only checks whether one of the fields is empty.
+	 * @param fields Content of the textfields
 	 * @return Returns whether the inputs are valid or not
 	 */
 	private boolean validInputs(String[] fields) {
@@ -633,7 +634,6 @@ public class HRDAdminGUI extends JFrame {
 	 * @param fields The information about the new guy obtained by the method
 	 * getInputs() and validated by the method validInputs(String[] fields)
 	 * @throws SQLException 
-	 * @see getInputs(), validInputs(String fields[]) 
 	 */
 	private void addHRGuy(String[] fields) throws SQLException {
 		
@@ -671,7 +671,7 @@ public class HRDAdminGUI extends JFrame {
 	/**
 	 * Initializes the variable defautlModel for the table with
 	 * a model of the DB.
-	 * 
+	 * @throws SQLException
 	 */
 	private void initDefaultModel() throws SQLException {
 
